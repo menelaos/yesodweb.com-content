@@ -252,7 +252,7 @@ good idea to always check for pending messages in your defaultLayout function.
         mmsg <- getMessage
 ----
 
-We use widgets to compose together HTML, CSS and Javascript. At the end of the
+We use widgets to compose together HTML, CSS and JavaScript. At the end of the
 day, we need to unwrap all of that into simple HTML. That's what the
 +widgetToPageContent+ function is for. We're going to give it a widget consisting
 of the content we received from the individual page (inside), plus a standard

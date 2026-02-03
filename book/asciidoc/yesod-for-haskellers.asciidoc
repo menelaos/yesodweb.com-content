@@ -278,7 +278,7 @@ Yesod has a concept of a *foundation data type*. This is a data type at the
 core of each application, and is used in three important ways:
 
 * It can hold onto values that are initialized and shared amongst all aspects of your application, such as an HTTP connection manager, a database connection pool, settings loaded from a file, or some shared mutable state like a counter or cache.
-* Typeclass instances provide even more information about your application. The +Yesod+ typeclass has various settings, such as what the default template of your app should be, or the maximum allowed request body size. The +YesodDispatch+ class indicates how incoming requests should be dispatched to handler functions. And there are a number of typeclasses commonly used in Yesod helper libraries, such as +RenderMessage+ for i18n support or +YesodJquery+ for providing the shared location of the jQuery Javascript library.
+* Typeclass instances provide even more information about your application. The +Yesod+ typeclass has various settings, such as what the default template of your app should be, or the maximum allowed request body size. The +YesodDispatch+ class indicates how incoming requests should be dispatched to handler functions. And there are a number of typeclasses commonly used in Yesod helper libraries, such as +RenderMessage+ for i18n support or +YesodJquery+ for providing the shared location of the jQuery JavaScript library.
 * Associated types (i.e., type families) are used to create a related *route data type* for each application. This is a simple ADT that represents all legal routes in your application. But using this intermediate data type instead of dealing directly with strings, Yesod applications can take advantage of the compiler to prevent creating invalid links. This feature is known as *type safe URLs*.
 
 In keeping with the spirit of this chapter, we're going to create our first
@@ -574,7 +574,7 @@ Some requests to a web application can be displayed with various *representation
 * An HTML table
 * A CSV file
 * XML
-* JSON data to be consumed by some client-side Javascript
+* JSON data to be consumed by some client-side JavaScript
 
 The HTTP spec allows a client to specify its preference of representation via
 the +accept+ request header. And Yesod allows a handler function to use the
@@ -985,7 +985,7 @@ piece of checking that you have to perform.
 
 While generating plain text pages can be fun, it's hardly what one normally
 expects from a web framework. As you'd hope, Yesod comes built in with support
-for generating HTML, CSS and Javascript as well.
+for generating HTML, CSS and JavaScript as well.
 
 Before we get into templating languages, let's do it the raw, low-level way,
 and then build up to something a bit more pleasant.
@@ -1008,7 +1008,7 @@ getStyleR = return $ TypedContent typeCss $ toContent
 
 getScriptR :: LiteHandler TypedContent
 getScriptR = return $ TypedContent typeJavascript $ toContent
-    "alert('Yay, Javascript works too!');"
+    "alert('Yay, JavaScript works too!');"
 
 main :: IO ()
 main = warp 3000 $ liteApp $ do
@@ -1018,7 +1018,7 @@ main = warp 3000 $ liteApp $ do
 ----
 
 We're just reusing all of the +TypedContent+ stuff we've already learnt. We now
-have three separate routes, providing HTML, CSS and Javascript. We write our
+have three separate routes, providing HTML, CSS and JavaScript. We write our
 content as ++String++s, convert them to +Content+ using +toContent+, then wrap
 them with a +TypedContent+ constructor to give them the appropriate
 content-type headers.
@@ -1051,7 +1051,7 @@ getStyleR = return $ TypedContent typeCss $ toContent
 
 getScriptR :: LiteHandler TypedContent
 getScriptR = return $ TypedContent typeJavascript $ toContent
-    "alert('Yay, Javascript works too!');"
+    "alert('Yay, JavaScript works too!');"
 
 main :: IO ()
 main = warp 3000 $ liteApp $ do
@@ -1099,7 +1099,7 @@ getStyleR :: LiteHandler Css
 getStyleR = withUrlRenderer [lucius|h1 { color: red }|]
 
 getScriptR :: LiteHandler Javascript
-getScriptR = withUrlRenderer [julius|alert('Yay, Javascript works too!');|]
+getScriptR = withUrlRenderer [julius|alert('Yay, JavaScript works too!');|]
 
 main :: IO ()
 main = warp 3000 $ liteApp $ do
@@ -1112,7 +1112,7 @@ main = warp 3000 $ liteApp $ do
 
 Likely the most confusing part of this is the +withUrlRenderer+ calls. This
 gets into one of the most powerful features of Yesod: type-safe URLs. If you
-notice in our HTML, we're providing links to the CSS and Javascript URLs via
+notice in our HTML, we're providing links to the CSS and JavaScript URLs via
 strings. This leads to a duplication of that information, as in our +main+
 function we have to provide those strings a second time. This is very fragile:
 our codebase is one refactor away from having broken links.
@@ -1133,7 +1133,7 @@ since Widgets end up providing the renderer function for us automatically.
 
 === Widgets
 
-Dealing with HTML, CSS and Javascript as individual components can be nice in
+Dealing with HTML, CSS and JavaScript as individual components can be nice in
 many cases. However, when you want to build up reusable components for a page,
 it can get in the way of composability. If you want more motivation for why
 widgets are useful, please see the widget chapter. For now, let's just dig into
@@ -1149,14 +1149,14 @@ getHomeR = defaultLayout $ do
     setTitle $ toHtml "Hi There!"
     [whamlet|<h1>Hello World!|]
     toWidget [lucius|h1 { color: red }|]
-    toWidget [julius|alert('Yay, Javascript works too!');|]
+    toWidget [julius|alert('Yay, JavaScript works too!');|]
 
 main :: IO ()
 main = warp 3000 $ liteApp $ dispatchTo getHomeR
 ----
 
 This is the same example as above, but we've now condensed it into a single
-handler. Yesod will automatically handle providing the CSS and Javascript to
+handler. Yesod will automatically handle providing the CSS and JavaScript to
 the HTML. By default, it will place them in +style+ and +script+ tags in the
 +head+ and +body+ of the page, respectively, but Yesod provides many
 customization settings to do other things (such as automatically creating

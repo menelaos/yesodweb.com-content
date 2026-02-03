@@ -4,7 +4,7 @@ As you've read through this book, there have been a number of monads which have
 appeared: +Handler+, +Widget+ and +YesodDB+ (for Persistent). As with most
 monads, each one provides some specific functionality: +Handler+ gives access
 to the request and allows you to send responses, a +Widget+ contains HTML, CSS,
-and Javascript, and +YesodDB+ lets you make database queries. In
+and JavaScript, and +YesodDB+ lets you make database queries. In
 Model-View-Controller (MVC) terms, we could consider +YesodDB+ to be the model,
 +Widget+ to be the view, and +Handler+ to be the controller.
 
@@ -112,7 +112,7 @@ together, we can now run database actions inside our handlers.
 
 Most of the time in Yesod code, and especially thus far in this book, widgets
 have been treated as actionless containers that simply combine together HTML,
-CSS and Javascript. But in reality, a +Widget+ can do anything that a +Handler+
+CSS and JavaScript. But in reality, a +Widget+ can do anything that a +Handler+
 can do, by using the +handlerToWidget+ function. So for example, you can run
 database queries inside a +Widget+ by using something like +handlerToWidget .
 runDB+.

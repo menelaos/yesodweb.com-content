@@ -195,12 +195,12 @@ is mostly identical for any subsite you'll write.
 We now have a fully working subsite. The final component we want as part of our
 chat library is a widget to be embedded inside a page which will provide chat
 functionality. By creating this as a widget, we can include all of our HTML,
-CSS, and Javascript as a reusable component.
+CSS, and JavaScript as a reusable component.
 
 Our widget will need to take in one argument: a function to convert a +Chat+
 subsite URL into a master site URL. The reasoning here is that an application
 developer could place the chat subsite anywhere in the URL structure, and this
-widget needs to be able to generate Javascript which will point at the correct
+widget needs to be able to generate JavaScript which will point at the correct
 URLs. Let's start off our widget:
 
 [source, haskell]
@@ -235,7 +235,7 @@ function lives in the +Handler+ monad, we need to use +handlerToWidget+:
 ----
 
 If the user is logged in, we want to display the chat box, style it with some
-CSS, and then make it interactive using some Javascript. This is mostly
+CSS, and then make it interactive using some JavaScript. This is mostly
 client-side code wrapped in a Widget:
 
 [source, haskell]
@@ -264,7 +264,7 @@ client-side code wrapped in a Widget:
                     overflow: auto;
                 }
             |]
-            -- And now that Javascript
+            -- And now that JavaScript
             toWidgetBody [julius|
                 // Set up the receiving end
                 var output = document.getElementById(#{toJSON output});

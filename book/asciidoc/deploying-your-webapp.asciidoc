@@ -93,7 +93,7 @@ out a safe storage solution for the client session key.
 There are two commonly used features in the Yesod world: serving your site over
 HTTPS, and placing your static files on a separate domain name. While both of
 these are good practices, when combined they can lead to problems if you're not
-careful. In particular, most web browsers will not load up Javascript files
+careful. In particular, most web browsers will not load up JavaScript files
 from a non-HTTPS domain name if your HTML is served from an HTTPS domain name.
 In this situation, you'll need to do one of two things:
 
@@ -344,7 +344,7 @@ A similar approach, without requiring the QtWebkit library, is
 wai-handler-launch, which launches a Warp server and then opens up the user's
 default web browser. There's a little trickery involved here: in order to know
 that the user is still using the site, +wai-handler-launch+  inserts a "ping"
-Javascript snippet to every HTML page it serves. It +wai-handler-launch+
+JavaScript snippet to every HTML page it serves. It +wai-handler-launch+
 doesn't receive a ping for two minutes, it shuts down.
 
 === CGI on Apache

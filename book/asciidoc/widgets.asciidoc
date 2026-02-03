@@ -116,7 +116,7 @@ page. In particular:
 
 * The title
 * External stylesheets
-* External Javascript
+* External JavaScript
 * CSS declarations
 * JavaScript code
 * Arbitrary +<head>+ content
