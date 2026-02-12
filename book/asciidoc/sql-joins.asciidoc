@@ -326,7 +326,7 @@ getHomeR = do
     render <- getUrlRenderParams
     respondSourceDB typeHtml $ do
         sendChunkText "<html><head><title>Blog posts</title></head><body><ul>"
-        blogsSrc $= CL.map (\(E.Value blogid, E.Value title, E.Value name) ->
+        blogsSrc .| CL.map (\(E.Value blogid, E.Value title, E.Value name) ->
             toFlushBuilder $
             [hamlet|
                 <li>
@@ -382,7 +382,7 @@ import           Database.Esqueleto      ((^.))
 import           Database.Persist.Sqlite
 import           Yesod
 import qualified Data.Conduit.List as CL
-import Data.Conduit (($=))
+import Data.Conduit ((.|))
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Author
@@ -425,7 +425,7 @@ getHomeR = do
     render <- getUrlRenderParams
     respondSourceDB typeHtml $ do
         sendChunkText "<html><head><title>Blog posts</title></head><body><ul>"
-        blogsSrc $= CL.map (\(E.Value blogid, E.Value title, E.Value name) ->
+        blogsSrc .| CL.map (\(E.Value blogid, E.Value title, E.Value name) ->
             toFlushBuilder $
             [hamlet|
                 <li>

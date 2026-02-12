@@ -514,7 +514,7 @@ At the very core of Yesod's content system are the following types:
 [source, haskell]
 ----
 data Content = ContentBuilder !Builder !(Maybe Int) -- ^ The content and optional content length.
-             | ContentSource !(Source (ResourceT IO) (Flush Builder))
+             | ContentSource !(ConduitT () (Flush Builder) (ResourceT IO) ())
              | ContentFile !FilePath !(Maybe FilePart)
              | ContentDontEvaluate !Content
 
@@ -734,9 +734,9 @@ When we encountered this issue in WAI, we introduced the +responseSource+
 method of constructing a response. Using +sendWaiResponse+, we could reuse that
 same method for creating a streaming response in Yesod. But there's also a
 simpler API for doing this: +respondSource+. +respondSource+ takes two
-parameters: the content type of the response, and a +Source+ of +Flush
+parameters: the content type of the response, and a +ConduitT+ that produces a stream of +Flush
 Builder+. Yesod also provides a number of convenience functions for creating
-that +Source+, such as +sendChunk+, +sendChunkBS+, and +sendChunkText+.
+that +ConduitT+, such as +sendChunk+, +sendChunkBS+, and +sendChunkText+.
 
 Here's an example, which just converts our initial +responseSource+ example
 from WAI to Yesod.
