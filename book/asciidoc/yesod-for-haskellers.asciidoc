@@ -158,8 +158,6 @@ import           Blaze.ByteString.Builder           (Builder, fromByteString)
 import           Blaze.ByteString.Builder.Char.Utf8 (fromShow)
 import           Control.Concurrent                 (threadDelay)
 import           Control.Monad                      (forM_)
-import           Control.Monad.Trans.Class          (lift)
-import           Data.Monoid                        ((<>))
 import           Network.HTTP.Types                 (status200)
 import           Network.Wai                        (Application,
                                                      responseStream)
@@ -203,9 +201,6 @@ into play:
 {-# LANGUAGE OverloadedStrings #-}
 import           Blaze.ByteString.Builder (fromByteString)
 import qualified Data.ByteString          as S
-import           Data.Conduit             (Flush (Chunk), ($=))
-import           Data.Conduit.Binary      (sourceHandle)
-import qualified Data.Conduit.List        as CL
 import           Network.HTTP.Types       (status200)
 import           Network.Wai              (Application, responseStream)
 import           Network.Wai.Handler.Warp (run)
@@ -749,7 +744,6 @@ import           Blaze.ByteString.Builder           (fromByteString)
 import           Blaze.ByteString.Builder.Char.Utf8 (fromShow)
 import           Control.Concurrent                 (threadDelay)
 import           Control.Monad                      (forM_)
-import           Data.Monoid                        ((<>))
 import           Network.Wai                        (pathInfo)
 import           Yesod.Core                         (HandlerT, RenderRoute (..),
                                                      TypedContent, Yesod,
@@ -1077,7 +1071,7 @@ here. Please see the Shakespeare chapter in the book for more information.
 [source, haskell]
 ----
 {-# LANGUAGE QuasiQuotes #-}
-import           Data.Text   (Text, pack)
+import           Data.Text   (pack)
 import           Text.Julius (Javascript)
 import           Text.Lucius (Css)
 import           Yesod.Core

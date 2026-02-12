@@ -151,7 +151,6 @@ let's see how we could modify Yesod to always produce trailing slashes on URLs:
 {-# LANGUAGE TypeFamilies          #-}
 import           Blaze.ByteString.Builder.Char.Utf8 (fromText)
 import           Control.Arrow                      ((***))
-import           Data.Monoid                        (mappend)
 import qualified Data.Text                          as T
 import qualified Data.Text.Encoding                 as TE
 import           Network.HTTP.Types                 (encodePath)

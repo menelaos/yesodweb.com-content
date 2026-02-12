@@ -227,10 +227,8 @@ entities once. Let's see a quick example:
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
-import Database.Persist
 import Database.Persist.TH
 import Database.Persist.Sqlite
-import Control.Monad.IO.Class (liftIO)
 
 mkPersist sqlSettings [persistLowerCase|
 Person
@@ -348,11 +346,9 @@ pass it off to other Persistent functions.
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-import           Control.Monad.IO.Class  (liftIO)
 import           Database.Persist
 import           Database.Persist.Sqlite
 import           Database.Persist.TH
-import           Control.Monad.IO.Unlift
 import           Data.Text 
 import           Control.Monad.Reader
 import           Control.Monad.Logger
@@ -467,14 +463,9 @@ to _ask_ it to help. Let's see what this looks like:
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-import           Control.Monad.IO.Class  (liftIO)
 import           Database.Persist
 import           Database.Persist.Sqlite
 import           Database.Persist.TH
-import           Control.Monad.IO.Unlift
-import           Data.Text 
-import           Control.Monad.Reader
-import           Control.Monad.Logger
 import           Conduit
 
 share [mkPersist sqlSettings, mkEntityDefList "entityDefs", mkMigrate "migrateAll"] [persistLowerCase|
@@ -522,7 +513,6 @@ Persistent provides a helper function, +mkMigrate+:
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 
@@ -625,7 +615,6 @@ in Haskell as a data constructor.
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
-import Data.Time
 import Control.Monad.IO.Class (liftIO)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -1075,7 +1064,6 @@ favorite programming language:
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Data.Time
@@ -1121,7 +1109,6 @@ Salvador:
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Data.Time
@@ -1188,7 +1175,6 @@ import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Control.Monad.IO.Class (liftIO)
-import Data.Time
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person
@@ -1236,7 +1222,6 @@ want to track which people have shopped in which stores:
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
-import Data.Time
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person

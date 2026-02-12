@@ -40,7 +40,6 @@ the blog title and the author:
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ViewPatterns               #-}
-import           Control.Monad.Logger
 import           Data.Text               (Text)
 import           Database.Persist.Sqlite
 import           Yesod
@@ -375,7 +374,6 @@ For completeness, here's the entire body of the final, streaming example:
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ViewPatterns               #-}
-import           Control.Monad.Logger
 import           Data.Text               (Text)
 import qualified Database.Esqueleto      as E
 import           Database.Esqueleto      ((^.))

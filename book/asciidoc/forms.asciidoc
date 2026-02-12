@@ -32,9 +32,8 @@ Haskell's type system to make sure everything is working correctly.
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Control.Applicative ((<$>), (<*>))
-import           Data.Text           (Text)
-import           Data.Time           (Day)
+import           Data.Text         (Text)
+import           Data.Time         (Day)
 import           Yesod
 import           Yesod.Form.Jquery
 
@@ -555,8 +554,7 @@ we could code something like this.
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Control.Applicative
-import           Data.Text           (Text)
+import           Data.Text (Text)
 import           Yesod
 
 data App = App
@@ -693,8 +691,7 @@ you need to correct. With input forms, the user simply gets an error message.
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Control.Applicative
-import           Data.Text           (Text)
+import           Data.Text (Text)
 import           Yesod
 
 data App = App
@@ -853,8 +850,7 @@ Let's see an example of using these two functions:
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Control.Applicative
-import           Data.Text           (Text)
+import           Data.Text (Text)
 import           Data.Time
 import           Yesod
 

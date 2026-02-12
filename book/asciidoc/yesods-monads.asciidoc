@@ -405,7 +405,7 @@ How do we get such an instance? One approach is to simply use the +CRandT+ monad
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 import Yesod
-import Crypto.Random (SystemRandom, newGenIO)
+import Crypto.Random (SystemRandom)
 import Control.Monad.CryptoRandom
 import Data.ByteString.Base16 (encode)
 import Data.Text.Encoding (decodeUtf8)
@@ -466,7 +466,7 @@ import           Control.Monad              (join)
 import           Control.Monad.Catch        (throwM)
 import           Control.Monad.CryptoRandom
 import           Control.Monad.Error.Class  (MonadError (..))
-import           Crypto.Random              (SystemRandom, newGenIO)
+import           Crypto.Random              (SystemRandom)
 import           Data.ByteString.Base16     (encode)
 import           Data.IORef
 import           Data.Text.Encoding         (decodeUtf8)

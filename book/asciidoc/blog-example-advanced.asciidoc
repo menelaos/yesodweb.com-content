@@ -37,7 +37,6 @@ import Database.Persist.Sqlite
     , createSqlitePool, runSqlPersistMPool
     )
 import Data.Time (UTCTime, getCurrentTime)
-import Control.Applicative ((<$>), (<*>), pure)
 import Data.Typeable (Typeable)
 import Control.Monad.Logger (runStdoutLoggingT)
 ----

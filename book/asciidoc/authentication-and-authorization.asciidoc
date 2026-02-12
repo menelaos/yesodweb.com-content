@@ -79,7 +79,6 @@ Let's jump right in with an example of authentication. For the Google OAuth auth
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Data.Default                (def)
 import           Data.Text                   (Text)
 import           Network.HTTP.Client.Conduit (Manager, newManager)
 import           Yesod
@@ -258,7 +257,6 @@ import           Database.Persist.Sqlite
 import           Database.Persist.TH
 import           Network.Mail.Mime
 import           Text.Blaze.Html.Renderer.Utf8 (renderHtml)
-import           Text.Hamlet                   (shamlet)
 import           Text.Shakespeare.Text         (stext)
 import           Yesod
 import           Yesod.Auth
@@ -422,7 +420,6 @@ your Yesod typeclass instance. Let's see an example.
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Data.Default         (def)
 import           Data.Text            (Text)
 import           Network.HTTP.Conduit (Manager, newManager, tlsManagerSettings)
 import           Yesod

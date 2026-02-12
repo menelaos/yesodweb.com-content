@@ -467,7 +467,7 @@ example.
 ----
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
-import Text.Hamlet (HtmlUrl, hamlet)
+import Text.Hamlet (hamlet)
 import Text.Blaze.Html.Renderer.String (renderHtml)
 import Data.Text (Text, append, pack)
 import Control.Arrow (second)
