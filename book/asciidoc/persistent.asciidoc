@@ -1088,9 +1088,8 @@ itself; you still need to fill in all values. This will only affect the
 database schema and automatic migrations.
 
 We need to surround the string with single quotes so that the database can
-properly interpret it. Finally, Persistent can use double quotes for containing
-white space, so if we want to set someone's default home country to be El
-Salvador:
+properly interpret it. This also allows us to use values containing white space,
+so if we want to set someone's default home country to be El Salvador:
 
 
 [source, haskell]
@@ -1119,7 +1118,7 @@ Person
     age Int Maybe
     created UTCTime default=CURRENT_TIME
     language String default='Haskell'
-    country String "default='El Salvador'"
+    country String default='El Salvador'
     deriving Show
 |]
 
@@ -1139,7 +1138,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person sql=the-person-table id=numeric_id
     firstName String sql=first_name
     lastName String sql=fldLastName
-    age Int "sql=The Age of the Person"
+    age Int sql="The Age of the Person"
     PersonName firstName lastName
     deriving Show
 |]
