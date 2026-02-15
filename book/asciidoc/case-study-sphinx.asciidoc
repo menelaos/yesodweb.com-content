@@ -472,7 +472,7 @@ We start the document element with an +id+ attribute, start the content, insert
 the content, and then close both elements. We use +toPathPiece+ to convert a
 +DocId+ into a +Text+ value. Next, we need to be able to convert a stream of
 these entities into a stream of events. For this, we can use the built-in
-+concatMap+ function from +Data.Conduit.List+: +CL.concatMap entityToEvents+.
++concatMapC+ function from +Conduit+: +concatMapC entityToEvents+.
 
 But what we _really_ want is to stream those events directly from the database.
 For most of this book, we've used the +selectList+ function, but Persistent
@@ -483,7 +483,7 @@ the function:
 [source, haskell]
 ----
 docSource :: ConduitT () X.Event (YesodDB Searcher) ()
-docSource = selectSource [] [] .| CL.concatMap entityToEvents
+docSource = selectSource [] [] .| concatMapC entityToEvents
 ----
 
 The .| operator combines two Conduits together into a new Conduit. Now
@@ -509,7 +509,7 @@ getXmlpipeR =
     respondSourceDB "text/xml"
  $  fullDocSource
  .| renderBuilder def
- .| CL.map Chunk
+ .| mapC Chunk
 ----
 
 === Full code
@@ -525,10 +525,9 @@ getXmlpipeR =
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ViewPatterns               #-}
+import           Conduit
 import           Control.Monad                           (forM)
 import           Control.Monad.Logger                    (runStdoutLoggingT)
-import           Data.Conduit
-import qualified Data.Conduit.List                       as CL
 import           Data.Maybe                              (catMaybes)
 import           Data.Text                               (Text)
 import qualified Data.Text                               as T
@@ -717,7 +716,7 @@ getXmlpipeR =
     respondSourceDB "text/xml"
  $  fullDocSource
  .| renderBuilder def
- .| CL.map Chunk
+ .| mapC Chunk
 
 entityToEvents :: (Entity Doc) -> [X.Event]
 entityToEvents (Entity docid doc) =
@@ -735,7 +734,7 @@ fullDocSource = do
     mapM_ yield endEvents
 
 docSource :: ConduitT () X.Event (YesodDB Searcher) ()
-docSource = selectSource [] [] .| CL.concatMap entityToEvents
+docSource = selectSource [] [] .| concatMapC entityToEvents
 
 toName :: Text -> X.Name
 toName x = X.Name x (Just "http://sphinxsearch.com/") (Just "sphinx")

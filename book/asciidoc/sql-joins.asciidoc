@@ -325,7 +325,7 @@ getHomeR = do
     render <- getUrlRenderParams
     respondSourceDB typeHtml $ do
         sendChunkText "<html><head><title>Blog posts</title></head><body><ul>"
-        blogsSrc .| CL.map (\(E.Value blogid, E.Value title, E.Value name) ->
+        blogsSrc .| mapC (\(E.Value blogid, E.Value title, E.Value name) ->
             toFlushBuilder $
             [hamlet|
                 <li>
@@ -336,7 +336,7 @@ getHomeR = do
 ----
 
 Notice the usage of +sendChunkText+, which sends some raw +Text+ values over
-the network. We then take each of our blog tuples and use conduit's +map+
+the network. We then take each of our blog tuples and use conduit's +mapC+
 function to create a streaming value. We use +hamlet+ to get templating, and
 then pass in our +render+ function to convert the type-safe URLs into their
 textual versions. Finally, +toFlushBuilder+ converts our +Html+ value into a
@@ -374,13 +374,12 @@ For completeness, here's the entire body of the final, streaming example:
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ViewPatterns               #-}
+import           Conduit
 import           Data.Text               (Text)
 import qualified Database.Esqueleto      as E
 import           Database.Esqueleto      ((^.))
 import           Database.Persist.Sqlite
 import           Yesod
-import qualified Data.Conduit.List as CL
-import Data.Conduit ((.|))
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Author
@@ -423,7 +422,7 @@ getHomeR = do
     render <- getUrlRenderParams
     respondSourceDB typeHtml $ do
         sendChunkText "<html><head><title>Blog posts</title></head><body><ul>"
-        blogsSrc .| CL.map (\(E.Value blogid, E.Value title, E.Value name) ->
+        blogsSrc .| mapC (\(E.Value blogid, E.Value title, E.Value name) ->
             toFlushBuilder $
             [hamlet|
                 <li>
