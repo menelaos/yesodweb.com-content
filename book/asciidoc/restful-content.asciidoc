@@ -38,13 +38,13 @@ bank account to another.
 +PUT+:: Create a new resource on the server, or replace an existing one. This
 method _is_ safe to be called multiple times.
 
-+PATCH+:: Updates the resource partially on the server. When you want
-to update one or more field of the resource, this method should be preferred.
++PATCH+:: Updates the resource partially on the server. When you want to update
+one or more fields of the resource, this method should be preferred.
 
 +DELETE+:: Just like it sounds: wipe out a resource on the server. Calling
 multiple times should be OK.
 
-To a certain extent, this fits in very well with Haskell philosophy: a +GET+
+To a certain extent, this fits in very well with Haskell's philosophy: a +GET+
 request is similar to a pure function, which cannot have side effects. In
 practice, your +GET+ functions will probably perform +IO+, such as reading
 information from a database, logging user actions, and so on.
