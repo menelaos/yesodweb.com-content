@@ -210,7 +210,7 @@ main = L.putStrLn $ encode $ Person "Michael" 28
 ----
 
 I won't go into further detail on +aeson+, as
-link:https://www.fpcomplete.com/haddocks/aeson[the Haddock documentation]
+link:https://hackage.haskell.org/package/aeson[the Haddock documentation]
 already provides a great introduction to the library. What I've described so
 far is enough to understand our convenience functions.
 
