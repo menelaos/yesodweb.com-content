@@ -371,7 +371,7 @@ and the last line does the actual rewriting.
 === FastCGI on lighttpd
 
 For this example, I've left off some of the basic FastCGI settings like
-mime-types. I also have a more complex file in production that prepends "www."
+MIME types. I also have a more complex file in production that prepends "www."
 when absent and serves static files from a separate domain. However, this
 should serve to show the basics.
 

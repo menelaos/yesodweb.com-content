@@ -383,7 +383,7 @@ really want is to store this content in an external file and then refer to it
 from the HTML.
 
 This is where +addStaticContent+ comes in. It takes three arguments: the
-filename extension of the content (+css+ or +js+), the mime-type of the content
+filename extension of the content (+css+ or +js+), the MIME type of the content
 (+text/css+ or +text/javascript+) and the content itself. It will then return
 one of three possible results:
 

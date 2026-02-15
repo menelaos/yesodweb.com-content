@@ -497,9 +497,9 @@ typeclass, and what does it have to do with our +Html+ response? Let's start by
 answering my question from above: no, Yesod does *not* in any way hard code
 support for +Html+. A handler function can return any value that has an
 instance of +ToTypedContent+. This typeclass (which we will examine in a moment)
-provides both a mime-type and a representation of the data that WAI can
+provides both a MIME type and a representation of the data that WAI can
 consume. +yesodRunner+ then converts that into a WAI response, setting the
-+Content-Type+ response header to the mime type, using a 200 OK status code,
++Content-Type+ response header to the MIME type, using a 200 OK status code,
 and sending the response body.
 
 ==== (To)Content, (To)TypedContent
