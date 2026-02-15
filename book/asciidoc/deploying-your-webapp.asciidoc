@@ -233,23 +233,13 @@ responsible to run your own process. I strongly recommend a monitoring utility
 which will automatically restart your application in case it crashes. There are
 many great options out there, such as angel or daemontools.
 
-To give a concrete example, here is an Upstart config file. The file must be
-placed in +/etc/init/mysite.conf+:
-
-----
-description "My awesome Yesod application"
-start on runlevel [2345];
-stop on runlevel [!2345];
-respawn
-chdir /home/michael/sites/mysite
-exec /home/michael/sites/mysite/dist/build/mysite/mysite
-----
-
-Once this is in place, bringing up your application is as simple as
-+sudo start mysite+. A similar systemd configuration file placed in
+To give a concrete example, here is a systemd configuration file placed in
 +/etc/systemd/system/yesod-sample.service+:
 
 ----
+[Unit]
+Description=My awesome Yesod application
+
 [Service]
 ExecStart=/home/sibi/.local/bin/my-yesod-executable
 Restart=always
