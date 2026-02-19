@@ -372,7 +372,7 @@ several hundred kilobytes. If we take a non-streaming approach, this can lead
 to huge memory usage and slow response times.
 
 So how exactly do we create a streaming response? Yesod provides a helper
-function for this case: +responseSourceDB+. This function takes two arguments:
+function for this case: +respondSourceDB+. This function takes two arguments:
 a content type, and a Conduit providing a stream of blaze-builder
 ++Builder++s. Yesod then handles all of the issues of grabbing a database
 connection from the connection pool, starting a transaction, and streaming the
