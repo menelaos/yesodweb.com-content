@@ -378,7 +378,7 @@ Otherwise, we want to return a 405 bad method response, and therefore use the
 +badMethod+ handler. At this point, we&#8217;ve come full circle to our original
 handler discussion. You can see that we&#8217;re using +yesodRunner+ to execute
 our handler function. As a reminder, this will take our environment and WAI
-+Request+, convert it to a +YesodRequest+, constructor a +RunHandlerEnv+, hand that
++Request+, convert it to a +YesodRequest+, construct a +RunHandlerEnv+, hand that
 to the handler function, and then convert the resulting +YesodResponse+ into a
 WAI +Response+.
 
