@@ -165,7 +165,7 @@ mkYesod "Slash" [parseRoutes|
 
 instance Yesod Slash where
     joinPath _ ar pieces' qs' =
-        fromText ar `mappend` encodePath pieces qs
+        fromText ar <> encodePath pieces qs
       where
         qs = map (TE.encodeUtf8 *** go) qs'
         go "" = Nothing
