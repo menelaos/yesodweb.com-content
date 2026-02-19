@@ -165,8 +165,7 @@ implementations of +Yesod+ typeclass methods.
 
 The +Import+ module was born out of a few commonly recurring patterns.
 
-* I want to define some helper functions (maybe the +&lt;&gt; = mappend+
-  operator) to be used by all handlers.
+* I want to define some helper functions to be used by all handlers.
 
 * I'm always adding the same five import statements (+Data.Text+,
   +Control.Applicative+, etc) to every handler module.
