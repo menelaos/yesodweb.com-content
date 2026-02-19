@@ -98,8 +98,8 @@ but how does Yesod know how to deal with +Html+? The answer lies in the
 
 [source, haskell]
 ----
-data Content = ContentBuilder !BBuilder.Builder !(Maybe Int) -- ^ The content and optional content length.
-             | ContentSource !(ConduitT () (Flush BBuilder.Builder) (ResourceT IO) ())
+data Content = ContentBuilder !BB.Builder !(Maybe Int) -- ^ The content and optional content length.
+             | ContentSource !(ConduitT () (Flush BB.Builder) (ResourceT IO) ())
              | ContentFile !FilePath !(Maybe FilePart)
              | ContentDontEvaluate !Content
 data TypedContent = TypedContent !ContentType !Content
