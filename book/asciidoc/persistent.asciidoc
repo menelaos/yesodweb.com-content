@@ -276,22 +276,22 @@ data Person = Person
 type PersonId = Key Person
 
 instance PersistEntity Person where
-    newtype Key Person = PersonKey (BackendKey SqlBackend)
+    newtype Key Person = PersonKey {unPersonKey :: (BackendKey SqlBackend)}
         deriving (PersistField, Show, Eq, Read, Ord)
     -- A Generalized Algebraic Datatype (GADT).
     -- This gives us a type-safe approach to matching fields with
     -- their datatypes.
-    data EntityField Person typ where
-        PersonId   :: EntityField Person PersonId
-        PersonName :: EntityField Person String
-        PersonAge  :: EntityField Person Int
+    data EntityField Person typ
+        = (typ ~ PersonId) => PersonId
+        | (typ ~ String) => PersonName
+        | (typ ~ Int) => PersonAge
 
     data Unique Person
     type PersistEntityBackend Person = SqlBackend
 
     toPersistFields (Person name age) =
-        [ SomePersistField name
-        , SomePersistField age
+        [ toPersistValue name
+        , toPersistValue age
         ]
 
     fromPersistValues [nameValue, ageValue] = Person
@@ -301,29 +301,32 @@ instance PersistEntity Person where
 
     -- Information on each field, used internally to generate SQL statements
     persistFieldDef PersonId = FieldDef
-        (HaskellName "Id")
-        (DBName "id")
+        (FieldNameHS "Id")
+        (FieldNameDB "id")
         (FTTypeCon Nothing "PersonId")
         SqlInt64
         []
         True
         NoReference
+        ...
     persistFieldDef PersonName = FieldDef
-        (HaskellName "name")
-        (DBName "name")
+        (FieldNameHS "name")
+        (FieldNameDB "name")
         (FTTypeCon Nothing "String")
         SqlString
         []
         True
         NoReference
+        ...
     persistFieldDef PersonAge = FieldDef
-        (HaskellName "age")
-        (DBName "age")
+        (FieldNameHS "age")
+        (FieldNameDB "age")
         (FTTypeCon Nothing "Int")
         SqlInt64
         []
         True
         NoReference
+        ...
 ----
 
 As you might expect, our +Person+ datatype closely matches the definition we
