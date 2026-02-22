@@ -177,11 +177,17 @@ data PersistValue
     | PersistNull
     | PersistList [PersistValue]
     | PersistMap [(Text, PersistValue)]
-    | PersistObjectId ByteString
-    -- ^ Intended especially for MongoDB backend
-    | PersistDbSpecific ByteString
-    -- ^ Using 'PersistDbSpecific' allows you to use types
-    -- specific to a particular backend
+    | -- | Intended especially for MongoDB backend
+      PersistObjectId ByteString
+    | -- | Intended especially for PostgreSQL backend for text arrays
+      PersistArray [PersistValue]
+    | -- | This constructor is used to specify some raw literal value for the
+      -- backend. The 'LiteralType' value specifies how the value should be
+      -- escaped. This can be used to make special, custom types avaialable
+      -- in the back end.
+      --
+      -- @since 2.12.0.0
+      PersistLiteral_ LiteralType ByteString
 ----
 
 A +PersistValue+ correlates to a column in a SQL database. In our person example
