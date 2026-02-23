@@ -371,12 +371,12 @@ off our application to Warp, just like we did in the past.
 Congratulations, you've now seen your first Yesod application! (Or, at least
 your first Yesod application in this chapter.)
 
-=== The HandlerT monad transformer
+=== The HandlerFor monad
 
 While that example was technically using Yesod, it was incredibly uninspiring.
 There's no question that Yesod did nothing more than get in our way relative to
 WAI. And that's because we haven't started taking advantage of any of Yesod's
-features. Let's address that, starting with the +HandlerT+ monad transformer.
+features. Let's address that, starting with the +HandlerFor+ monad.
 
 There are many common things you'd want to do when handling a single request,
 e.g.:
@@ -386,11 +386,10 @@ e.g.:
 * Return a 404 not found response.
 * Do some logging.
 
-To encapsulate all of this common functionality, Yesod provides a +HandlerT+
-monad transformer. The vast majority of the code you write in Yesod will live
-in this transformer, so you should get acquainted with it. Let's start off by
-replacing our previous +YesodDispatch+ instance with a new one that takes
-advantage of +HandlerT+:
+To encapsulate all of this common functionality, Yesod provides the +HandlerFor+
+monad. The vast majority of the code you write in Yesod will live in this monad,
+so you should get acquainted with it. Let's start off by replacing our previous
++YesodDispatch+ instance with a new one that takes advantage of +HandlerFor+:
 
 [source, haskell]
 ----
@@ -399,7 +398,7 @@ advantage of +HandlerT+:
 import           Network.Wai              (pathInfo)
 import           Network.Wai.Handler.Warp (run)
 import qualified Text.Blaze.Html5         as H
-import           Yesod.Core               (HandlerT, Html, RenderRoute (..),
+import           Yesod.Core               (HandlerFor, Html, RenderRoute (..),
                                            Yesod, YesodDispatch (..), getYesod,
                                            notFound, toWaiApp, yesodRunner)
 
@@ -418,7 +417,7 @@ instance RenderRoute App where
                         , [] -- empty query string
                         )
 
-getHomeR :: HandlerT App IO Html
+getHomeR :: HandlerFor App Html
 getHomeR = do
     site <- getYesod
     return $ welcomeMessage site
@@ -447,9 +446,9 @@ main = do
 
 +getHomeR+ is our first handler function. (That name is yet another naming
 convention in the Yesod world: the lower case HTTP request method, followed by
-the route constructor name.) Notice its signature: +HandlerT App IO Html+. It's
-so common to have the monad stack +HandlerT App IO+ that most applications have
-a type synonym for it, +type Handler = HandlerT App IO+. The function is
+the route constructor name.) Notice its signature: +HandlerFor App Html+. It's
+so common to have the monad +HandlerFor App+ that most applications have
+a type synonym for it, +type Handler = HandlerFor App+. The function is
 returning some +Html+. You might be wondering if Yesod is hard-coded to only
 work with +Html+ values. We'll explain that detail in a moment.
 
@@ -459,12 +458,12 @@ build up more interesting handlers as we continue.
 
 The implementation of +yesodDispatch+ is now quite different. The key to it is
 the +yesodRunner+ function, which is a low-level function for converting
-+HandlerT+ stacks into WAI ++Application++s. Let's look at its type signature:
++HandlerFor+ monads into WAI ++Application++s. Let's look at its type signature:
 
 [source, haskell]
 ----
 yesodRunner :: (ToTypedContent res, Yesod site)
-            => HandlerT site IO res
+            => HandlerFor site res
             -> YesodRunnerEnv site
             -> Maybe (Route site)
             -> Application
@@ -485,7 +484,7 @@ that our parsing and rendering functions remain in proper alignment.  We'll
 discuss how Yesod deals with that later.
 
 Coming back to the parameters to +yesodRunner+: we've now addressed the +Maybe
-(Route site)+ and +YesodRunerEnv site+. To get our +HandlerT site IO res+
+(Route site)+ and +YesodRunerEnv site+. To get our +HandlerFor site res+
 value, we pattern match on +maybeRoute+. If it's +Just HomeR+, we use
 +getHomeR+. Otherwise, we use the +notFound+ function, which is a built-in
 function that returns a 404 not found response, using your default site
@@ -599,7 +598,7 @@ import           Data.Text                (Text)
 import           Network.Wai              (pathInfo)
 import           Network.Wai.Handler.Warp (run)
 import qualified Text.Blaze.Html5         as H
-import           Yesod.Core               (HandlerT, Html, RenderRoute (..),
+import           Yesod.Core               (HandlerFor, Html, RenderRoute (..),
                                            TypedContent, Value, Yesod,
                                            YesodDispatch (..), getYesod,
                                            notFound, object, provideRep,
@@ -623,7 +622,7 @@ instance RenderRoute App where
                         , [] -- empty query string
                         )
 
-getHomeR :: HandlerT App IO TypedContent
+getHomeR :: HandlerFor App TypedContent
 getHomeR = do
     site <- getYesod
     selectRep $ do
@@ -678,11 +677,11 @@ Haskell Center, or deployment tools like Keter.
 === Writing handlers
 
 Since the vast majority of your application will end up living in the
-+HandlerT+ monad transformer, it's not surprising that there are quite a few
-functions that work in that context. +HandlerT+ is an instance of many common
-typeclasses, including +MonadIO+, +MonadTrans+, +MonadBaseControl+,
-+MonadLogger+ and +MonadResource+, and so can automatically take advantage of
-those functionalities.
++HandlerFor+ monad, it's not surprising that there are quite a few functions
+that work in that context. +HandlerFor+ is an instance of many common
+typeclasses, including +MonadIO+, +MonadUnliftIO+, +MonadLogger+ and
++MonadResource+, and so can automatically take advantage of those
+functionalities.
 
 In addition to that standard functionality, the following are some common
 categories of functions. The only requirement Yesod places on your handler
@@ -745,7 +744,7 @@ import           Blaze.ByteString.Builder.Char.Utf8 (fromShow)
 import           Control.Concurrent                 (threadDelay)
 import           Control.Monad                      (forM_)
 import           Network.Wai                        (pathInfo)
-import           Yesod.Core                         (HandlerT, RenderRoute (..),
+import           Yesod.Core                         (HandlerFor, RenderRoute (..),
                                                      TypedContent, Yesod,
                                                      YesodDispatch (..), liftIO,
                                                      notFound, respondSource,
@@ -766,7 +765,7 @@ instance RenderRoute App where
                         , [] -- empty query string
                         )
 
-getHomeR :: HandlerT App IO TypedContent
+getHomeR :: HandlerFor App TypedContent
 getHomeR = respondSource "text/plain" $ do
     sendChunkBS "Starting streaming response.\n"
     sendChunkText "Performing some I/O.\n"
@@ -797,8 +796,8 @@ main = warp 3000 App
 
 === Dynamic parameters
 
-Now that we've finished our detour into the details of the +HandlerT+
-transformer, let's get back to higher-level Yesod request processing. So far,
+Now that we've finished our detour into the details of the +HandlerFor+
+monad, let's get back to higher-level Yesod request processing. So far,
 all of our examples have dealt with a single supported request route. Let's
 make this more interesting. We now want to have an application which serves
 Fibonacci numbers. If you make a request to +/fib/5+, it will return the fifth

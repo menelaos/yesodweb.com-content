@@ -1614,11 +1614,11 @@ functions we've spoken about so far, such as +insert+ and +selectList+.
 
 [NOTE]
 ====
-The type of +runDB+ is +YesodDB site a -> HandlerT site IO a+. +YesodDB+ is defined as:
+The type of +runDB+ is +YesodDB site a -> HandlerFor site a+. +YesodDB+ is defined as:
  
 [source, haskell]
 ----
-type YesodDB site = ReaderT (YesodPersistBackend site) (HandlerT site IO)
+type YesodDB site = ReaderT (YesodPersistBackend site) (HandlerFor site)
 ----
  
 Since it is built on top of the +YesodPersistBackend+ associated type, it uses

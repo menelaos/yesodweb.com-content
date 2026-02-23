@@ -75,7 +75,7 @@ NOTE: Yesod uses +ResourceT+ for exception safety, instead of continuation
 passing style. This makes it much easier to write exception safe code in Yesod.
 
 But as a Yesod user, you never really see +YesodApp+. There&#8217;s another layer
-on top of that which you are used to dealing with: +HandlerT+. When you write
+on top of that which you are used to dealing with: +HandlerFor+. When you write
 handler functions, you need to have access to three different things:
 
 * The +YesodRequest+ value for the current request.
@@ -86,7 +86,7 @@ handler functions, you need to have access to three different things:
 
 So when you&#8217;re writing a handler function, you&#8217;re essentially just
 writing in a +ReaderT+ transformer that has access to all of this information. The
-+runHandler+ function will turn a +HandlerT+ into a +YesodApp+. +yesodRunner+ takes this
++runHandler+ function will turn a +HandlerFor+ into a +YesodApp+. +yesodRunner+ takes this
 a step further and converts all the way to a WAI +Application+.
 
 ==== Content
@@ -313,7 +313,7 @@ components to make our site work. Let&#8217;s start with the simplest: the
 
 [source, haskell]
 ----
-type Handler = HandlerT App IO
+type Handler = HandlerFor App
 ----
 
 Next is the type-safe URL and its rendering function. The rendering function is
@@ -504,7 +504,7 @@ instance RenderRoute App where
         let (ps, qs) = renderRoute subRoute
          in ("my-subsite" : ps, qs)
 
-type Handler = HandlerT App IO
+type Handler = HandlerFor App
 
 instance Yesod App
 
