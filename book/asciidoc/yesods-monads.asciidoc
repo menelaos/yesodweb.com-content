@@ -83,13 +83,13 @@ more generic +HandlerT+ and +WidgetT+. Each of those transformers takes two
 type parameters: your foundation data type, and a base monad. The most commonly
 used base monad is +IO+.
 
-In persistent, we have a typeclass called +PersistStore+. This typeclass
-defines all of the primitive operations you can perform on a database, like
-+get+. There are instances of this typeclass for each database backend
-supported by persistent. For example, for SQL databases, there is a datatype
-called +SqlBackend+. We then use a standard +ReaderT+ transformer to provide
-that +SqlBackend+ value to all of our operations.  This means that you can run
-a SQL database with any underlying monad which is an instance of +MonadIO+. The
+In persistent, we have a few typeclasses that define all of the primitive
+operations you can perform on a database, like +get+ in +PersistStoreRead+.
+There are instances of these typeclasses for each database backend supported by
+persistent. For example, for SQL databases, there is a datatype called
++SqlBackend+. We then use a standard +ReaderT+ transformer to provide that
++SqlBackend+ value to all of our operations.  This means that you can run a SQL
+database with any underlying monad which is an instance of +MonadIO+. The
 takeaway here is that we can layer our Persistent transformer on top of
 +Handler+ or +Widget+.
 
