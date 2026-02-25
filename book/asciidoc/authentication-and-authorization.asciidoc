@@ -374,7 +374,7 @@ instance YesodAuthEmail App where
         mu <- get uid
         case mu of
             Nothing -> return Nothing
-            Just u -> do
+            Just _u -> do
                 update uid [UserVerified =. True, UserVerkey =. Nothing]
                 return $ Just uid
     getPassword = liftHandler . runDB . fmap (join . fmap userPassword) . get
