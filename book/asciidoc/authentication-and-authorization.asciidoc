@@ -268,7 +268,7 @@ import           Yesod
 import           Yesod.Auth
 import           Yesod.Auth.Email
 
-share [mkPersist sqlSettings { mpsGeneric = False }, mkMigrate "migrateAll"] [persistLowerCase|
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 User
     email Text
     password Text Maybe -- Password may not be set yet
