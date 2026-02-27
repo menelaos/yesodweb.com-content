@@ -351,11 +351,13 @@ for both of those.
 yesodDispatch :: YesodRunnerEnv site -> Application
 ----
 
-+YesodRunnerEnv+ provides three values: a +Logger+ value for outputting log
++YesodRunnerEnv+ provides several values: a +Logger+ value for outputting log
 messages, the foundation datatype value itself, and a session backend, used for
-storing and retrieving information for the user's active session. In real Yesod
-applications, as you'll see shortly, you don't need to interact with these
-values directly, but it's informative to understand what's under the surface.
+storing and retrieving information for the user's active session. It also
+supplies a source of random numbers for token generation and a helper function
+for efficiently updating the "Expires" header. In real Yesod applications, as
+you'll see shortly, you don't need to interact with these values directly, but
+it's informative to understand what's under the surface.
 
 The return type of +yesodDispatch+ is +Application+ from WAI. But as we saw
 earlier, +Application+ is simply a CPSed function from +Request+ to +Response+. So
