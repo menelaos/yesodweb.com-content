@@ -533,9 +533,9 @@ cacheSeconds:: Set a Cache-Control header to indicate how many seconds this
 response can be cached. This can be particularly useful if you are using
 link:http://www.varnish-cache.org[varnish on your server].
 
-neverExpires:: Set the Expires header to the year 2037. You can use this with
-content which should never expire, such as when the request path has a hash
-value associated with it.
+neverExpires:: Set the Expires header to a date one year from now. You can use
+this with content which should never expire, such as when the request path has a
+hash value associated with it.
 
 alreadyExpired:: Sets the Expires header to the past.
 
