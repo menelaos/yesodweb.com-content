@@ -162,14 +162,14 @@ curl http://localhost:3000 --header "accept: text/html"
 curl http://localhost:3000
 ----
 
-Notice how the response changes based on the accept header value. Also, when
+Notice how the response changes based on the +Accept+ header value. Also, when
 you leave off the header, the HTML response is displayed by default. The rule
-here is that if there is no accept header, the first representation is
-displayed. If an accept header is present, but we have no matches, then a 406
+here is that if there is no +Accept+ header, the first representation is
+displayed. If an +Accept+ header is present, but we have no matches, then a 406
 "not acceptable" response is returned.
 
 By default, Yesod provides a convenience middleware that lets you set the
-accept header via a query string parameter. This can make it easier to test
++Accept+ header via a query string parameter. This can make it easier to test
 from your browser. To try this out, you can visit
 link:http://localhost:3000/?_accept=application/json[http://localhost:3000/?_accept=application/json].
 

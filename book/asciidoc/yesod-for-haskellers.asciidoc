@@ -573,7 +573,7 @@ Some requests to a web application can be displayed with various *representation
 * JSON data to be consumed by some client-side JavaScript
 
 The HTTP spec allows a client to specify its preference of representation via
-the +accept+ request header. And Yesod allows a handler function to use the
+the +Accept+ request header. And Yesod allows a handler function to use the
 +selectRep+/+provideRep+ function combo to provide multiple representations,
 and have the framework automatically choose the appropriate one based on the
 client headers.
