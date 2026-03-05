@@ -372,8 +372,8 @@ several hundred kilobytes. If we take a non-streaming approach, this can lead
 to huge memory usage and slow response times.
 
 So how exactly do we create a streaming response? Yesod provides a helper
-function for this case: +responseSourceDB+. This function takes two arguments:
-a content type, and a conduit +Source+ providing a stream of blaze-builder
+function for this case: +respondSourceDB+. This function takes two arguments:
+a content type, and a Conduit providing a stream of blaze-builder
 ++Builder++s. Yesod then handles all of the issues of grabbing a database
 connection from the connection pool, starting a transaction, and streaming the
 response to the user.
@@ -387,7 +387,7 @@ is:
 
 [source, haskell]
 ----
-renderBuilder :: Monad m => RenderSettings -> Conduit Event m Builder
+renderBuilder :: Monad m => RenderSettings -> ConduitT Event Builder m ()
 ----
 
 In plain English, that means +renderBuilder+ takes some settings (we'll just use
@@ -472,7 +472,7 @@ We start the document element with an +id+ attribute, start the content, insert
 the content, and then close both elements. We use +toPathPiece+ to convert a
 +DocId+ into a +Text+ value. Next, we need to be able to convert a stream of
 these entities into a stream of events. For this, we can use the built-in
-+concatMap+ function from +Data.Conduit.List+: +CL.concatMap entityToEvents+.
++concatMapC+ function from +Conduit+: +concatMapC entityToEvents+.
 
 But what we _really_ want is to stream those events directly from the database.
 For most of this book, we've used the +selectList+ function, but Persistent
@@ -482,18 +482,18 @@ the function:
 
 [source, haskell]
 ----
-docSource :: Source (YesodDB Searcher) X.Event
-docSource = selectSource [] [] $= CL.concatMap entityToEvents
+docSource :: ConduitT () X.Event (YesodDB Searcher) ()
+docSource = selectSource [] [] .| concatMapC entityToEvents
 ----
 
-The $= operator joins together a source and a conduit into a new source. Now
+The .| operator combines two Conduits together into a new Conduit. Now
 that we have our +Event+ source, all we need to do is surround it with the
-document start and end events. With +Source+'s +Monad+ instance, this is a
+document start and end events. With +ConduitT+'s +Monad+ instance, this is a
 piece of cake:
 
 [source, haskell]
 ----
-fullDocSource :: Source (YesodDB Searcher) X.Event
+fullDocSource :: ConduitT () X.Event (YesodDB Searcher) ()
 fullDocSource = do
     mapM_ yield startEvents
     docSource
@@ -508,33 +508,35 @@ getXmlpipeR :: Handler TypedContent
 getXmlpipeR =
     respondSourceDB "text/xml"
  $  fullDocSource
- $= renderBuilder def
- $= CL.map Chunk
+ .| renderBuilder def
+ .| mapC Chunk
 ----
 
 === Full code
 
 [source, haskell]
 ----
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE ViewPatterns               #-}
-import           Control.Applicative                     ((<$>), (<*>))
+import           Conduit
 import           Control.Monad                           (forM)
 import           Control.Monad.Logger                    (runStdoutLoggingT)
-import           Data.Conduit
-import qualified Data.Conduit.List                       as CL
 import           Data.Maybe                              (catMaybes)
-import           Data.Monoid                             (mconcat)
 import           Data.Text                               (Text)
 import qualified Data.Text                               as T
-import           Data.Text.Lazy.Encoding                 (decodeUtf8)
 import qualified Data.XML.Types                          as X
 import           Database.Persist.Sqlite
 import           Text.Blaze.Html                         (preEscapedToHtml)
@@ -719,8 +721,8 @@ getXmlpipeR :: Handler TypedContent
 getXmlpipeR =
     respondSourceDB "text/xml"
  $  fullDocSource
- $= renderBuilder def
- $= CL.map Chunk
+ .| renderBuilder def
+ .| mapC Chunk
 
 entityToEvents :: (Entity Doc) -> [X.Event]
 entityToEvents (Entity docid doc) =
@@ -731,14 +733,14 @@ entityToEvents (Entity docid doc) =
     , X.EventEndElement document
     ]
 
-fullDocSource :: Source (YesodDB Searcher) X.Event
+fullDocSource :: ConduitT () X.Event (YesodDB Searcher) ()
 fullDocSource = do
     mapM_ yield startEvents
     docSource
     mapM_ yield endEvents
 
-docSource :: Source (YesodDB Searcher) X.Event
-docSource = selectSource [] [] $= CL.concatMap entityToEvents
+docSource :: ConduitT () X.Event (YesodDB Searcher) ()
+docSource = selectSource [] [] .| concatMapC entityToEvents
 
 toName :: Text -> X.Name
 toName x = X.Name x (Just "http://sphinxsearch.com/") (Just "sphinx")

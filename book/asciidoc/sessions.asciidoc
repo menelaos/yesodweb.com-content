@@ -136,8 +136,6 @@ a value for a key, and +deleteSession+ clears a value for a key.
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-import           Control.Applicative ((<$>), (<*>))
-import qualified Web.ClientSession   as CS
 import           Yesod
 
 data App = App

@@ -24,7 +24,7 @@ them to enhance Yesod application development.
 === Synopsis
 
 There are four main languages at play: Hamlet is an HTML templating language,
-Julius is for Javascript, and Cassius and Lucius are both for CSS. Hamlet and
+Julius is for JavaScript, and Cassius and Lucius are both for CSS. Hamlet and
 Cassius are both whitespace-sensitive formats, using indentation to denote
 nesting. By contrast, Lucius is a superset of CSS, keeping CSS's braces for
 denoting nesting. Julius is a simple passthrough language for producing
@@ -467,7 +467,7 @@ example.
 ----
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
-import Text.Hamlet (HtmlUrl, hamlet)
+import Text.Hamlet (hamlet)
 import Text.Blaze.Html.Renderer.String (renderHtml)
 import Data.Text (Text, append, pack)
 import Control.Arrow (second)

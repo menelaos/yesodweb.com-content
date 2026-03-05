@@ -4,7 +4,7 @@ As you've read through this book, there have been a number of monads which have
 appeared: +Handler+, +Widget+ and +YesodDB+ (for Persistent). As with most
 monads, each one provides some specific functionality: +Handler+ gives access
 to the request and allows you to send responses, a +Widget+ contains HTML, CSS,
-and Javascript, and +YesodDB+ lets you make database queries. In
+and JavaScript, and +YesodDB+ lets you make database queries. In
 Model-View-Controller (MVC) terms, we could consider +YesodDB+ to be the model,
 +Widget+ to be the view, and +Handler+ to be the controller.
 
@@ -69,7 +69,7 @@ of transformers you have around an +IO+, there's still an +IO+ at the core,
 meaning you can perform I/O in any of these monad transformer stacks. You'll
 often see code that looks like +liftIO $ putStrLn "Hello There!"+.
 
-=== The Three Transformers
+=== The Three Monads
 
 NOTE: In earlier versions of Yesod, +Handler+ and +Widget+ were far more
 magical and scary. Since version 1.2, things are much simplified. So if you
@@ -77,19 +77,32 @@ remember reading some scary stuff about fake transformers and subsite
 parameters, rest assured: you haven't gone crazy, things have actually changed
 a bit. The story with persistent is likewise much simpler.
 
-We've already discussed two of our transformers previously: +Handler+ and
-+Widget+. Remember that these are each application-specific synonyms for the
-more generic +HandlerT+ and +WidgetT+. Each of those transformers takes two
-type parameters: your foundation data type, and a base monad. The most commonly
-used base monad is +IO+.
+Prior to Yesod 1.6, +Handler+ and +Widget+ were implemented via monad
+transformers. Nowadays, we use the
+link:https://academy.fpblock.com/blog/2017/06/readert-design-pattern[ReaderT
+pattern]. +Handler+ and +Widget+ are application-specific synonyms for the more
+generic +HandlerFor+ and +WidgetFor+.
 
-In persistent, we have a typeclass called +PersistStore+. This typeclass
-defines all of the primitive operations you can perform on a database, like
-+get+. There are instances of this typeclass for each database backend
-supported by persistent. For example, for SQL databases, there is a datatype
-called +SqlBackend+. We then use a standard +ReaderT+ transformer to provide
-that +SqlBackend+ value to all of our operations.  This means that you can run
-a SQL database with any underlying monad which is an instance of +MonadIO+. The
+[source, haskell]
+----
+newtype HandlerFor site a = HandlerFor
+    { unHandlerFor :: HandlerData site site -> IO a
+    }
+
+newtype WidgetFor site a = WidgetFor
+    { unWidgetFor :: WidgetData site -> IO a
+    }
+----
+
++site+ is your foundation data type.
+
+In persistent, we have a few typeclasses that define all of the primitive
+operations you can perform on a database, like +get+ in +PersistStoreRead+.
+There are instances of these typeclasses for each database backend supported by
+persistent. For example, for SQL databases, there is a datatype called
++SqlBackend+. We then use a standard +ReaderT+ transformer to provide that
++SqlBackend+ value to all of our operations.  This means that you can run a SQL
+database with any underlying monad which is an instance of +MonadIO+. The
 takeaway here is that we can layer our Persistent transformer on top of
 +Handler+ or +Widget+.
 
@@ -101,7 +114,7 @@ more convenience, we have a type synonym called +YesodDB+ which is defined as:
 
 [source, haskell]
 ----
-type YesodDB site = ReaderT (YesodPersistBackend site) (HandlerT site IO)
+type YesodDB site = ReaderT (YesodPersistBackend site) (HandlerFor site)
 ----
 
 Our database actions will then have types that look like +YesodDB MyApp
@@ -112,7 +125,7 @@ together, we can now run database actions inside our handlers.
 
 Most of the time in Yesod code, and especially thus far in this book, widgets
 have been treated as actionless containers that simply combine together HTML,
-CSS and Javascript. But in reality, a +Widget+ can do anything that a +Handler+
+CSS and JavaScript. But in reality, a +Widget+ can do anything that a +Handler+
 can do, by using the +handlerToWidget+ function. So for example, you can run
 database queries inside a +Widget+ by using something like +handlerToWidget .
 runDB+.
@@ -128,14 +141,20 @@ itself. This is a boon for modularity, as this +Widget+ can be used in any
 
 [source, haskell]
 ----
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 import           Control.Monad.Logger    (runNoLoggingT)
 import           Data.Text               (Text)
 import           Data.Time
@@ -298,71 +317,6 @@ many common monad transformers.
 But if you want to, you can wrap up the call to +runInputGet+ above using
 +handlerToWidget+, and everything will work the same.
 
-=== Performance and error messages
-
-NOTE: You can consider this section extra credit. It gets into some of the
-design motivation behind Yesod, which isn't necessary for usage of Yesod.
-
-At this point, you may be just a bit confused. As I mentioned above, the
-+Widget+ synonym uses +IO+ as its base monad, not +Handler+. So how can
-+Widget+ perform +Handler+ actions? And why *not* just make +Widget+ a
-transformer on top of +Handler+, and then use +lift+ instead of this special
-+handlerToWidget+? And finally, I mentioned that +Widget+ and +Handler+ were
-both instances of +MonadResource+. If you're familiar with +MonadResource+, you
-may be wondering why +ResourceT+ doesn't appear in the monad transformer stack.
-
-The fact of the matter is, there's a much simpler (in terms of implementation)
-approach we could take for all of these monad transformers. +Handler+ could be
-a transformer on top of +ResourceT IO+ instead of just +IO+, which would be a
-bit more accurate. And +Widget+ could be layered on top of +Handler+. The end
-result would look something like this:
-
-[source, haskell]
-----
-type Handler = HandlerT App (ResourceT IO)
-type Widget  = WidgetT  App (HandlerT App (ResourceT IO))
-----
-
-Doesn't look too bad, especially since you mostly deal with the more friendly
-type synonyms instead of directly with the transformer types. The problem is
-that any time those underlying transformers leak out, these larger type
-signatures can be incredibly confusing. And the most common time for them to
-leak out is in error messages, when you're probably already pretty confused!
-(Another time is when working on subsites, which happens to be confusing too.)
-
-One other concern is that each monad transformer layer does add some amount of
-a performance penalty. This will probably be negligible compared to the I/O
-you'll be performing, but the overhead is there.
-
-So instead of having properly layered transformers, we flatten out each of
-+HandlerT+ and +WidgetT+ into a one-level transformer. Here's a high-level
-overview of the approach we use:
-
-* +HandlerT+ is really just a +ReaderT+ monad. (We give it a different name to
-  make error messages clearer.) This is a reader for the +HandlerData+ type,
-  which contains request information and some other immutable contents.
-
-* In addition, +HandlerData+ holds an +IORef+ to a +GHState+ (badly named for
-  historical reasons), which holds some data which can be mutated during the
-  course of a handler (e.g., session variables). The reason we use an +IORef+
-  instead of a +StateT+ kind of approach is that +IORef+ will maintain the
-  mutated state even if a runtime exception is thrown.
-
-* The +ResourceT+ monad transformer is essentially a +ReaderT+ holding onto an
-  +IORef+. This +IORef+ contains the information on all cleanup actions that
-  must be performed. (This is called +InternalState+.) Instead of having a
-  separate transformer layer to hold onto that reference, we hold onto the
-  reference ourself in +HandlerData+. (And yes, the reson for an +IORef+ here
-  is also for runtime exceptions.)
-
-* A +WidgetT+ is essentially just a +WriterT+ on top of everything that a
-  +HandlerT+ does. But since +HandlerT+ is just a +ReaderT+, we can easily
-  compress the two aspects into a single transformer, which looks something
-  like +newtype WidgetT site m a = WidgetT (HandlerData -> m (a, WidgetData))+.
-
-If you want to understand this more, please have a look at the definitions of
-+HandlerT+ and +WidgetT+ in +Yesod.Core.Types+.
-
 === Adding a new monad transformer
 
 At times, you'll want to add your own monad transformer in part of your
@@ -391,7 +345,7 @@ However, this results in an error message along the lines of:
 
 [source, errormsg]
 ----
-    No instance for (MonadCRandom e0 (HandlerT App IO))
+    No instance for 'MonadCRandom e0 (HandlerFor App)'
       arising from a use of ‘getBytes’
     In a stmt of a 'do' block: randomBS <- getBytes 128
 ----
@@ -405,7 +359,7 @@ How do we get such an instance? One approach is to simply use the +CRandT+ monad
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 import Yesod
-import Crypto.Random (SystemRandom, newGenIO)
+import Crypto.Random (SystemRandom)
 import Control.Monad.CryptoRandom
 import Data.ByteString.Base16 (encode)
 import Data.Text.Encoding (decodeUtf8)
@@ -435,11 +389,9 @@ main :: IO ()
 main = warp 3000 App
 ----
 
-Note that what we're doing is layering the +CRandT+ transformer on *top* of the
-+HandlerT+ transformer. It does not work to do things the other way around:
-Yesod itself would ultimately have to unwrap the +CRandT+ transformer, and it
-has no knowledge of how to do so. Notice that this is the same approach we take
-with Persistent: its transformer goes on top of +HandlerT+.
+Note that what we're doing is layering the +CRandT+ transformer on top of the
++HandlerFor+ monad. This is the same approach we take with Persistent: its
+transformer also goes on top of +HandlerFor+.
 
 But there are two downsides to this approach:
 
@@ -466,7 +418,7 @@ import           Control.Monad              (join)
 import           Control.Monad.Catch        (throwM)
 import           Control.Monad.CryptoRandom
 import           Control.Monad.Error.Class  (MonadError (..))
-import           Crypto.Random              (SystemRandom, newGenIO)
+import           Crypto.Random              (SystemRandom)
 import           Data.ByteString.Base16     (encode)
 import           Data.IORef
 import           Data.Text.Encoding         (decodeUtf8)
@@ -534,7 +486,7 @@ This really comes down to a few different concepts:
 . However, we *have* gained some complexity in needing a +MonadCRandom+ instance. Since this is a book on Yesod, and not on +monadcryptorandom+, I'm not going to go into details on this instance, but I encourage you to inspect it, and if you're interested, compare it to the instance for +CRandT+.
 
 Hopefully, this helps get across an important point: the power of the
-+HandlerT+ transformer. By just providing you with a readable environment,
++ReaderT+ pattern. By just providing you with a readable environment,
 you're able to recreate a +StateT+ transformer by relying on mutable
 references. In fact, if you rely on the underlying +IO+ monad for runtime
 exceptions, you can implement most cases of +ReaderT+, +WriterT+, +StateT+, and

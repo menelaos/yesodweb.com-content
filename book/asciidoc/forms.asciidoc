@@ -11,7 +11,7 @@ solution that addresses the following problems:
 
 * Generate HTML code for displaying the form.
 
-* Generate Javascript to do clientside validation and provide more
+* Generate JavaScript to do clientside validation and provide more
   user-friendly widgets, such as date pickers.
 
 * Build up more complex forms by combining together simpler forms.
@@ -20,7 +20,7 @@ solution that addresses the following problems:
 
 The yesod-form package provides all these features in a simple, declarative
 API. It builds on top of Yesod's widgets to simplify styling of forms and
-applying Javascript appropriately. And like the rest of Yesod, it uses
+applying JavaScript appropriately. And like the rest of Yesod, it uses
 Haskell's type system to make sure everything is working correctly.
 
 === Synopsis
@@ -32,9 +32,8 @@ Haskell's type system to make sure everything is working correctly.
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Control.Applicative ((<$>), (<*>))
-import           Data.Text           (Text)
-import           Data.Time           (Day)
+import           Data.Text         (Text)
+import           Data.Time         (Day)
 import           Yesod
 import           Yesod.Form.Jquery
 
@@ -555,8 +554,7 @@ we could code something like this.
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Control.Applicative
-import           Data.Text           (Text)
+import           Data.Text (Text)
 import           Yesod
 
 data App = App
@@ -663,7 +661,7 @@ monadic form with an applicative one and the code would still work.
 Applicative and monadic forms handle both the generation of your HTML code and
 the parsing of user input. Sometimes, you only want to do the latter, such as
 when there's an already-existing form in HTML somewhere, or if you want to
-generate a form dynamically using Javascript. In such a case, you'll want input
+generate a form dynamically using JavaScript. In such a case, you'll want input
 forms.
 
 These work mostly the same as applicative and monadic forms, with some differences:
@@ -693,8 +691,7 @@ you need to correct. With input forms, the user simply gets an error message.
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Control.Applicative
-import           Data.Text           (Text)
+import           Data.Text (Text)
 import           Yesod
 
 data App = App
@@ -853,8 +850,7 @@ Let's see an example of using these two functions:
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Control.Applicative
-import           Data.Text           (Text)
+import           Data.Text (Text)
 import           Data.Time
 import           Yesod
 
@@ -928,7 +924,7 @@ whether the field is required or optional. The result is six helper functions:
 +areq+, +aopt+, +mreq+, +mopt+, +ireq+, and +iopt+.
 
 Forms have significant power available. They can automatically insert
-Javascript to help you leverage nicer UI controls, such as a jQuery UI date
+JavaScript to help you leverage nicer UI controls, such as a jQuery UI date
 picker. Forms are also fully i18n-ready, so you can support a global community
 of users. And when you have more specific needs, you can slap on some
 validation functions to an existing field, or write a new one from scratch.

@@ -116,7 +116,7 @@ page. In particular:
 
 * The title
 * External stylesheets
-* External Javascript
+* External JavaScript
 * CSS declarations
 * JavaScript code
 * Arbitrary +<head>+ content
@@ -387,9 +387,10 @@ The answer is +widgetToPageContent+. Let's look at some (simplified) types:
 [source, haskell]
 ----
 data PageContent url = PageContent
-    { pageTitle :: Html
-    , pageHead :: HtmlUrl url
-    , pageBody :: HtmlUrl url
+    { pageTitle       :: !Html
+    , pageDescription :: !(Maybe Text)
+    , pageHead        :: !(HtmlUrl url)
+    , pageBody        :: !(HtmlUrl url)
     }
 widgetToPageContent :: Widget -> Handler (PageContent url)
 ----

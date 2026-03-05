@@ -15,10 +15,22 @@ your individual Haskell files.
 
 [source, haskell]
 ----
-{-# LANGUAGE OverloadedStrings, TypeFamilies, QuasiQuotes,
-             TemplateHaskell, GADTs, FlexibleContexts,
-             MultiParamTypeClasses, DeriveDataTypeable,
-             GeneralizedNewtypeDeriving, ViewPatterns #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 ----
 
 Now our imports.
@@ -37,7 +49,6 @@ import Database.Persist.Sqlite
     , createSqlitePool, runSqlPersistMPool
     )
 import Data.Time (UTCTime, getCurrentTime)
-import Control.Applicative ((<$>), (<*>), pure)
 import Data.Typeable (Typeable)
 import Control.Monad.Logger (runStdoutLoggingT)
 ----
@@ -252,7 +263,7 @@ good idea to always check for pending messages in your defaultLayout function.
         mmsg <- getMessage
 ----
 
-We use widgets to compose together HTML, CSS and Javascript. At the end of the
+We use widgets to compose together HTML, CSS and JavaScript. At the end of the
 day, we need to unwrap all of that into simple HTML. That's what the
 +widgetToPageContent+ function is for. We're going to give it a widget consisting
 of the content we received from the individual page (inside), plus a standard
