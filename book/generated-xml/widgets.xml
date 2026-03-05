@@ -117,7 +117,7 @@ External stylesheets
 </listitem>
 <listitem>
 <simpara>
-External Javascript
+External JavaScript
 </simpara>
 </listitem>
 <listitem>
@@ -402,9 +402,10 @@ each application. This is how Yesod apps are themed. So we&#8217;re still left w
 the question: when we&#8217;re inside <literal>defaultLayout</literal>, how do we unwrap a <literal>Widget</literal>?
 The answer is <literal>widgetToPageContent</literal>. Let&#8217;s look at some (simplified) types:</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">data PageContent url = PageContent
-    { pageTitle :: Html
-    , pageHead :: HtmlUrl url
-    , pageBody :: HtmlUrl url
+    { pageTitle       :: !Html
+    , pageDescription :: !(Maybe Text)
+    , pageHead        :: !(HtmlUrl url)
+    , pageBody        :: !(HtmlUrl url)
     }
 widgetToPageContent :: Widget -&gt; Handler (PageContent url)</programlisting>
 <simpara>This is getting closer to what we need. We now have direct access to the HTML

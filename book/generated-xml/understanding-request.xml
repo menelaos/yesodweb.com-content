@@ -73,7 +73,7 @@ have:</simpara>
 <note><simpara>Yesod uses <literal>ResourceT</literal> for exception safety, instead of continuation
 passing style. This makes it much easier to write exception safe code in Yesod.</simpara></note>
 <simpara>But as a Yesod user, you never really see <literal>YesodApp</literal>. There&#8217;s another layer
-on top of that which you are used to dealing with: <literal>HandlerT</literal>. When you write
+on top of that which you are used to dealing with: <literal>HandlerFor</literal>. When you write
 handler functions, you need to have access to three different things:</simpara>
 <itemizedlist>
 <listitem>
@@ -94,7 +94,7 @@ A mutable variable to keep track of updateable information, such as the headers 
 </itemizedlist>
 <simpara>So when you&#8217;re writing a handler function, you&#8217;re essentially just
 writing in a <literal>ReaderT</literal> transformer that has access to all of this information. The
-<literal>runHandler</literal> function will turn a <literal>HandlerT</literal> into a <literal>YesodApp</literal>. <literal>yesodRunner</literal> takes this
+<literal>runHandler</literal> function will turn a <literal>HandlerFor</literal> into a <literal>YesodApp</literal>. <literal>yesodRunner</literal> takes this
 a step further and converts all the way to a WAI <literal>Application</literal>.</simpara>
 </section>
 <section id="understanding-request_content">
@@ -103,8 +103,8 @@ a step further and converts all the way to a WAI <literal>Application</literal>.
 with a type of <literal>Handler Html</literal>. We&#8217;ve just described what the <literal>Handler</literal> means,
 but how does Yesod know how to deal with <literal>Html</literal>? The answer lies in the
 <literal>ToTypedContent</literal> typeclass. The relevants bit of code are:</simpara>
-<programlisting language="haskell" linenumbering="unnumbered">data Content = ContentBuilder !BBuilder.Builder !(Maybe Int) -- ^ The content and optional content length.
-             | ContentSource !(Source (ResourceT IO) (Flush BBuilder.Builder))
+<programlisting language="haskell" linenumbering="unnumbered">data Content = ContentBuilder !BB.Builder !(Maybe Int) -- ^ The content and optional content length.
+             | ContentSource !(ConduitT () (Flush BB.Builder) (ResourceT IO) ())
              | ContentFile !FilePath !(Maybe FilePart)
              | ContentDontEvaluate !Content
 data TypedContent = TypedContent !ContentType !Content
@@ -300,7 +300,7 @@ just the Template Haskell portion:</simpara>
 <simpara>While this generates a few pieces of code, we only need to replicate three
 components to make our site work. Let&#8217;s start with the simplest: the
 <literal>Handler</literal> type synonym:</simpara>
-<programlisting language="haskell" linenumbering="unnumbered">type Handler = HandlerT App IO</programlisting>
+<programlisting language="haskell" linenumbering="unnumbered">type Handler = HandlerFor App</programlisting>
 <simpara>Next is the type-safe URL and its rendering function. The rendering function is
 allowed to generate both path segments and query string parameters. Standard
 Yesod sites never generate query-string parameters, but it is technically
@@ -351,7 +351,7 @@ Otherwise, we want to return a 405 bad method response, and therefore use the
 <literal>badMethod</literal> handler. At this point, we&#8217;ve come full circle to our original
 handler discussion. You can see that we&#8217;re using <literal>yesodRunner</literal> to execute
 our handler function. As a reminder, this will take our environment and WAI
-<literal>Request</literal>, convert it to a <literal>YesodRequest</literal>, constructor a <literal>RunHandlerEnv</literal>, hand that
+<literal>Request</literal>, convert it to a <literal>YesodRequest</literal>, construct a <literal>RunHandlerEnv</literal>, hand that
 to the handler function, and then convert the resulting <literal>YesodResponse</literal> into a
 WAI <literal>Response</literal>.</simpara>
 <simpara>Wonderful; one down, three to go. The next one is even easier.</simpara>
@@ -470,7 +470,7 @@ instance RenderRoute App where
         let (ps, qs) = renderRoute subRoute
          in ("my-subsite" : ps, qs)
 
-type Handler = HandlerT App IO
+type Handler = HandlerFor App
 
 instance Yesod App
 

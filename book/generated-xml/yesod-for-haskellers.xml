@@ -132,8 +132,6 @@ import           Blaze.ByteString.Builder           (Builder, fromByteString)
 import           Blaze.ByteString.Builder.Char.Utf8 (fromShow)
 import           Control.Concurrent                 (threadDelay)
 import           Control.Monad                      (forM_)
-import           Control.Monad.Trans.Class          (lift)
-import           Data.Monoid                        ((&lt;&gt;))
 import           Network.HTTP.Types                 (status200)
 import           Network.Wai                        (Application,
                                                      responseStream)
@@ -171,9 +169,6 @@ into play:</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">{-# LANGUAGE OverloadedStrings #-}
 import           Blaze.ByteString.Builder (fromByteString)
 import qualified Data.ByteString          as S
-import           Data.Conduit             (Flush (Chunk), ($=))
-import           Data.Conduit.Binary      (sourceHandle)
-import qualified Data.Conduit.List        as CL
 import           Network.HTTP.Types       (status200)
 import           Network.Wai              (Application, responseStream)
 import           Network.Wai.Handler.Warp (run)
@@ -237,7 +232,7 @@ It can hold onto values that are initialized and shared amongst all aspects of y
 </listitem>
 <listitem>
 <simpara>
-Typeclass instances provide even more information about your application. The <literal>Yesod</literal> typeclass has various settings, such as what the default template of your app should be, or the maximum allowed request body size. The <literal>YesodDispatch</literal> class indicates how incoming requests should be dispatched to handler functions. And there are a number of typeclasses commonly used in Yesod helper libraries, such as <literal>RenderMessage</literal> for i18n support or <literal>YesodJquery</literal> for providing the shared location of the jQuery Javascript library.
+Typeclass instances provide even more information about your application. The <literal>Yesod</literal> typeclass has various settings, such as what the default template of your app should be, or the maximum allowed request body size. The <literal>YesodDispatch</literal> class indicates how incoming requests should be dispatched to handler functions. And there are a number of typeclasses commonly used in Yesod helper libraries, such as <literal>RenderMessage</literal> for i18n support or <literal>YesodJquery</literal> for providing the shared location of the jQuery JavaScript library.
 </simpara>
 </listitem>
 <listitem>
@@ -308,11 +303,13 @@ for both of those.</simpara>
 <simpara><literal>YesodDispatch</literal> determines how our application behaves. It has one method,
 <literal>yesodDispatch</literal>, of type:</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">yesodDispatch :: YesodRunnerEnv site -&gt; Application</programlisting>
-<simpara><literal>YesodRunnerEnv</literal> provides three values: a <literal>Logger</literal> value for outputting log
+<simpara><literal>YesodRunnerEnv</literal> provides several values: a <literal>Logger</literal> value for outputting log
 messages, the foundation datatype value itself, and a session backend, used for
-storing and retrieving information for the user&#8217;s active session. In real Yesod
-applications, as you&#8217;ll see shortly, you don&#8217;t need to interact with these
-values directly, but it&#8217;s informative to understand what&#8217;s under the surface.</simpara>
+storing and retrieving information for the user&#8217;s active session. It also
+supplies a source of random numbers for token generation and a helper function
+for efficiently updating the "Expires" header. In real Yesod applications, as
+you&#8217;ll see shortly, you don&#8217;t need to interact with these values directly, but
+it&#8217;s informative to understand what&#8217;s under the surface.</simpara>
 <simpara>The return type of <literal>yesodDispatch</literal> is <literal>Application</literal> from WAI. But as we saw
 earlier, <literal>Application</literal> is simply a CPSed function from <literal>Request</literal> to <literal>Response</literal>. So
 our implementation of <literal>yesodDispatch</literal> is able to use everything we learned
@@ -325,12 +322,12 @@ off our application to Warp, just like we did in the past.</simpara>
 <simpara>Congratulations, you&#8217;ve now seen your first Yesod application! (Or, at least
 your first Yesod application in this chapter.)</simpara>
 </section>
-<section id="yesod-for-haskellers_the_handlert_monad_transformer">
-<title>The HandlerT monad transformer</title>
+<section id="yesod-for-haskellers_the_handlerfor_monad">
+<title>The HandlerFor monad</title>
 <simpara>While that example was technically using Yesod, it was incredibly uninspiring.
 There&#8217;s no question that Yesod did nothing more than get in our way relative to
 WAI. And that&#8217;s because we haven&#8217;t started taking advantage of any of Yesod&#8217;s
-features. Let&#8217;s address that, starting with the <literal>HandlerT</literal> monad transformer.</simpara>
+features. Let&#8217;s address that, starting with the <literal>HandlerFor</literal> monad.</simpara>
 <simpara>There are many common things you&#8217;d want to do when handling a single request,
 e.g.:</simpara>
 <itemizedlist>
@@ -355,17 +352,16 @@ Do some logging.
 </simpara>
 </listitem>
 </itemizedlist>
-<simpara>To encapsulate all of this common functionality, Yesod provides a <literal>HandlerT</literal>
-monad transformer. The vast majority of the code you write in Yesod will live
-in this transformer, so you should get acquainted with it. Let&#8217;s start off by
-replacing our previous <literal>YesodDispatch</literal> instance with a new one that takes
-advantage of <literal>HandlerT</literal>:</simpara>
+<simpara>To encapsulate all of this common functionality, Yesod provides the <literal>HandlerFor</literal>
+monad. The vast majority of the code you write in Yesod will live in this monad,
+so you should get acquainted with it. Let&#8217;s start off by replacing our previous
+<literal>YesodDispatch</literal> instance with a new one that takes advantage of <literal>HandlerFor</literal>:</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 import           Network.Wai              (pathInfo)
 import           Network.Wai.Handler.Warp (run)
 import qualified Text.Blaze.Html5         as H
-import           Yesod.Core               (HandlerT, Html, RenderRoute (..),
+import           Yesod.Core               (HandlerFor, Html, RenderRoute (..),
                                            Yesod, YesodDispatch (..), getYesod,
                                            notFound, toWaiApp, yesodRunner)
 
@@ -384,7 +380,7 @@ instance RenderRoute App where
                         , [] -- empty query string
                         )
 
-getHomeR :: HandlerT App IO Html
+getHomeR :: HandlerFor App Html
 getHomeR = do
     site &lt;- getYesod
     return $ welcomeMessage site
@@ -411,9 +407,9 @@ main = do
     run 3000 waiApp</programlisting>
 <simpara><literal>getHomeR</literal> is our first handler function. (That name is yet another naming
 convention in the Yesod world: the lower case HTTP request method, followed by
-the route constructor name.) Notice its signature: <literal>HandlerT App IO Html</literal>. It&#8217;s
-so common to have the monad stack <literal>HandlerT App IO</literal> that most applications have
-a type synonym for it, <literal>type Handler = HandlerT App IO</literal>. The function is
+the route constructor name.) Notice its signature: <literal>HandlerFor App Html</literal>. It&#8217;s
+so common to have the monad <literal>HandlerFor App</literal> that most applications have
+a type synonym for it, <literal>type Handler = HandlerFor App</literal>. The function is
 returning some <literal>Html</literal>. You might be wondering if Yesod is hard-coded to only
 work with <literal>Html</literal> values. We&#8217;ll explain that detail in a moment.</simpara>
 <simpara>Our function body is short. We use the <literal>getYesod</literal> function to get the
@@ -421,9 +417,9 @@ foundation data type value, and then return the <literal>welcomeMessage</literal
 build up more interesting handlers as we continue.</simpara>
 <simpara>The implementation of <literal>yesodDispatch</literal> is now quite different. The key to it is
 the <literal>yesodRunner</literal> function, which is a low-level function for converting
-<literal>HandlerT</literal> stacks into WAI <literal>Application</literal>s. Let&#8217;s look at its type signature:</simpara>
+<literal>HandlerFor</literal> monads into WAI <literal>Application</literal>s. Let&#8217;s look at its type signature:</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">yesodRunner :: (ToTypedContent res, Yesod site)
-            =&gt; HandlerT site IO res
+            =&gt; HandlerFor site res
             -&gt; YesodRunnerEnv site
             -&gt; Maybe (Route site)
             -&gt; Application</programlisting>
@@ -440,7 +436,7 @@ dynamic parameters. At that point, it becomes a non-trivial endeavor to ensure
 that our parsing and rendering functions remain in proper alignment.  We&#8217;ll
 discuss how Yesod deals with that later.</simpara></note>
 <simpara>Coming back to the parameters to <literal>yesodRunner</literal>: we&#8217;ve now addressed the <literal>Maybe
-(Route site)</literal> and <literal>YesodRunerEnv site</literal>. To get our <literal>HandlerT site IO res</literal>
+(Route site)</literal> and <literal>YesodRunerEnv site</literal>. To get our <literal>HandlerFor site res</literal>
 value, we pattern match on <literal>maybeRoute</literal>. If it&#8217;s <literal>Just HomeR</literal>, we use
 <literal>getHomeR</literal>. Otherwise, we use the <literal>notFound</literal> function, which is a built-in
 function that returns a 404 not found response, using your default site
@@ -451,15 +447,15 @@ typeclass, and what does it have to do with our <literal>Html</literal> response
 answering my question from above: no, Yesod does <emphasis role="strong">not</emphasis> in any way hard code
 support for <literal>Html</literal>. A handler function can return any value that has an
 instance of <literal>ToTypedContent</literal>. This typeclass (which we will examine in a moment)
-provides both a mime-type and a representation of the data that WAI can
+provides both a MIME type and a representation of the data that WAI can
 consume. <literal>yesodRunner</literal> then converts that into a WAI response, setting the
-<literal>Content-Type</literal> response header to the mime type, using a 200 OK status code,
+<literal>Content-Type</literal> response header to the MIME type, using a 200 OK status code,
 and sending the response body.</simpara>
 <section id="yesod-for-haskellers_to_content_to_typedcontent">
 <title>(To)Content, (To)TypedContent</title>
 <simpara>At the very core of Yesod&#8217;s content system are the following types:</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">data Content = ContentBuilder !Builder !(Maybe Int) -- ^ The content and optional content length.
-             | ContentSource !(Source (ResourceT IO) (Flush Builder))
+             | ContentSource !(ConduitT () (Flush Builder) (ResourceT IO) ())
              | ContentFile !FilePath !(Maybe FilePart)
              | ContentDontEvaluate !Content
 
@@ -521,12 +517,12 @@ XML
 </listitem>
 <listitem>
 <simpara>
-JSON data to be consumed by some client-side Javascript
+JSON data to be consumed by some client-side JavaScript
 </simpara>
 </listitem>
 </itemizedlist>
 <simpara>The HTTP spec allows a client to specify its preference of representation via
-the <literal>accept</literal> request header. And Yesod allows a handler function to use the
+the <literal>Accept</literal> request header. And Yesod allows a handler function to use the
 <literal>selectRep</literal>/<literal>provideRep</literal> function combo to provide multiple representations,
 and have the framework automatically choose the appropriate one based on the
 client headers.</simpara>
@@ -544,7 +540,7 @@ import           Data.Text                (Text)
 import           Network.Wai              (pathInfo)
 import           Network.Wai.Handler.Warp (run)
 import qualified Text.Blaze.Html5         as H
-import           Yesod.Core               (HandlerT, Html, RenderRoute (..),
+import           Yesod.Core               (HandlerFor, Html, RenderRoute (..),
                                            TypedContent, Value, Yesod,
                                            YesodDispatch (..), getYesod,
                                            notFound, object, provideRep,
@@ -568,7 +564,7 @@ instance RenderRoute App where
                         , [] -- empty query string
                         )
 
-getHomeR :: HandlerT App IO TypedContent
+getHomeR :: HandlerFor App TypedContent
 getHomeR = do
     site &lt;- getYesod
     selectRep $ do
@@ -618,11 +614,11 @@ Haskell Center, or deployment tools like Keter.</simpara>
 <section id="yesod-for-haskellers_writing_handlers">
 <title>Writing handlers</title>
 <simpara>Since the vast majority of your application will end up living in the
-<literal>HandlerT</literal> monad transformer, it&#8217;s not surprising that there are quite a few
-functions that work in that context. <literal>HandlerT</literal> is an instance of many common
-typeclasses, including <literal>MonadIO</literal>, <literal>MonadTrans</literal>, <literal>MonadBaseControl</literal>,
-<literal>MonadLogger</literal> and <literal>MonadResource</literal>, and so can automatically take advantage of
-those functionalities.</simpara>
+<literal>HandlerFor</literal> monad, it&#8217;s not surprising that there are quite a few functions
+that work in that context. <literal>HandlerFor</literal> is an instance of many common
+typeclasses, including <literal>MonadIO</literal>, <literal>MonadUnliftIO</literal>, <literal>MonadLogger</literal> and
+<literal>MonadResource</literal>, and so can automatically take advantage of those
+functionalities.</simpara>
 <simpara>In addition to that standard functionality, the following are some common
 categories of functions. The only requirement Yesod places on your handler
 functions is that, ultimately, they return a type which is an instance of
@@ -710,9 +706,9 @@ data to the user. What happens if we want to perform such interleaving?</simpara
 method of constructing a response. Using <literal>sendWaiResponse</literal>, we could reuse that
 same method for creating a streaming response in Yesod. But there&#8217;s also a
 simpler API for doing this: <literal>respondSource</literal>. <literal>respondSource</literal> takes two
-parameters: the content type of the response, and a <literal>Source</literal> of <literal>Flush
+parameters: the content type of the response, and a <literal>ConduitT</literal> that produces a stream of <literal>Flush
 Builder</literal>. Yesod also provides a number of convenience functions for creating
-that <literal>Source</literal>, such as <literal>sendChunk</literal>, <literal>sendChunkBS</literal>, and <literal>sendChunkText</literal>.</simpara>
+that <literal>ConduitT</literal>, such as <literal>sendChunk</literal>, <literal>sendChunkBS</literal>, and <literal>sendChunkText</literal>.</simpara>
 <simpara>Here&#8217;s an example, which just converts our initial <literal>responseSource</literal> example
 from WAI to Yesod.</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">{-# LANGUAGE OverloadedStrings #-}
@@ -721,9 +717,8 @@ import           Blaze.ByteString.Builder           (fromByteString)
 import           Blaze.ByteString.Builder.Char.Utf8 (fromShow)
 import           Control.Concurrent                 (threadDelay)
 import           Control.Monad                      (forM_)
-import           Data.Monoid                        ((&lt;&gt;))
 import           Network.Wai                        (pathInfo)
-import           Yesod.Core                         (HandlerT, RenderRoute (..),
+import           Yesod.Core                         (HandlerFor, RenderRoute (..),
                                                      TypedContent, Yesod,
                                                      YesodDispatch (..), liftIO,
                                                      notFound, respondSource,
@@ -744,7 +739,7 @@ instance RenderRoute App where
                         , [] -- empty query string
                         )
 
-getHomeR :: HandlerT App IO TypedContent
+getHomeR :: HandlerFor App TypedContent
 getHomeR = respondSource "text/plain" $ do
     sendChunkBS "Starting streaming response.\n"
     sendChunkText "Performing some I/O.\n"
@@ -775,8 +770,8 @@ main = warp 3000 App</programlisting>
 </section>
 <section id="yesod-for-haskellers_dynamic_parameters">
 <title>Dynamic parameters</title>
-<simpara>Now that we&#8217;ve finished our detour into the details of the <literal>HandlerT</literal>
-transformer, let&#8217;s get back to higher-level Yesod request processing. So far,
+<simpara>Now that we&#8217;ve finished our detour into the details of the <literal>HandlerFor</literal>
+monad, let&#8217;s get back to higher-level Yesod request processing. So far,
 all of our examples have dealt with a single supported request route. Let&#8217;s
 make this more interesting. We now want to have an application which serves
 Fibonacci numbers. If you make a request to <literal>/fib/5</literal>, it will return the fifth
@@ -968,7 +963,7 @@ piece of checking that you have to perform.</simpara>
 <title>Shakespeare</title>
 <simpara>While generating plain text pages can be fun, it&#8217;s hardly what one normally
 expects from a web framework. As you&#8217;d hope, Yesod comes built in with support
-for generating HTML, CSS and Javascript as well.</simpara>
+for generating HTML, CSS and JavaScript as well.</simpara>
 <simpara>Before we get into templating languages, let&#8217;s do it the raw, low-level way,
 and then build up to something a bit more pleasant.</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">import           Data.Text  (pack)
@@ -987,7 +982,7 @@ getStyleR = return $ TypedContent typeCss $ toContent
 
 getScriptR :: LiteHandler TypedContent
 getScriptR = return $ TypedContent typeJavascript $ toContent
-    "alert('Yay, Javascript works too!');"
+    "alert('Yay, JavaScript works too!');"
 
 main :: IO ()
 main = warp 3000 $ liteApp $ do
@@ -995,7 +990,7 @@ main = warp 3000 $ liteApp $ do
     onStatic (pack "style.css") $ dispatchTo getStyleR
     onStatic (pack "script.js") $ dispatchTo getScriptR</programlisting>
 <simpara>We&#8217;re just reusing all of the <literal>TypedContent</literal> stuff we&#8217;ve already learnt. We now
-have three separate routes, providing HTML, CSS and Javascript. We write our
+have three separate routes, providing HTML, CSS and JavaScript. We write our
 content as <literal>String</literal>s, convert them to <literal>Content</literal> using <literal>toContent</literal>, then wrap
 them with a <literal>TypedContent</literal> constructor to give them the appropriate
 content-type headers.</simpara>
@@ -1024,7 +1019,7 @@ getStyleR = return $ TypedContent typeCss $ toContent
 
 getScriptR :: LiteHandler TypedContent
 getScriptR = return $ TypedContent typeJavascript $ toContent
-    "alert('Yay, Javascript works too!');"
+    "alert('Yay, JavaScript works too!');"
 
 main :: IO ()
 main = warp 3000 $ liteApp $ do
@@ -1043,7 +1038,7 @@ the only requirement is that you can get a <literal>Content</literal> value from
 either quasiquotation or Template Haskell. We&#8217;ll go for the former approach
 here. Please see the Shakespeare chapter in the book for more information.</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">{-# LANGUAGE QuasiQuotes #-}
-import           Data.Text   (Text, pack)
+import           Data.Text   (pack)
 import           Text.Julius (Javascript)
 import           Text.Lucius (Css)
 import           Yesod.Core
@@ -1065,7 +1060,7 @@ getStyleR :: LiteHandler Css
 getStyleR = withUrlRenderer [lucius|h1 { color: red }|]
 
 getScriptR :: LiteHandler Javascript
-getScriptR = withUrlRenderer [julius|alert('Yay, Javascript works too!');|]
+getScriptR = withUrlRenderer [julius|alert('Yay, JavaScript works too!');|]
 
 main :: IO ()
 main = warp 3000 $ liteApp $ do
@@ -1076,7 +1071,7 @@ main = warp 3000 $ liteApp $ do
 <title>URL rendering function</title>
 <simpara>Likely the most confusing part of this is the <literal>withUrlRenderer</literal> calls. This
 gets into one of the most powerful features of Yesod: type-safe URLs. If you
-notice in our HTML, we&#8217;re providing links to the CSS and Javascript URLs via
+notice in our HTML, we&#8217;re providing links to the CSS and JavaScript URLs via
 strings. This leads to a duplication of that information, as in our <literal>main</literal>
 function we have to provide those strings a second time. This is very fragile:
 our codebase is one refactor away from having broken links.</simpara>
@@ -1095,7 +1090,7 @@ since Widgets end up providing the renderer function for us automatically.</simp
 </section>
 <section id="yesod-for-haskellers_widgets">
 <title>Widgets</title>
-<simpara>Dealing with HTML, CSS and Javascript as individual components can be nice in
+<simpara>Dealing with HTML, CSS and JavaScript as individual components can be nice in
 many cases. However, when you want to build up reusable components for a page,
 it can get in the way of composability. If you want more motivation for why
 widgets are useful, please see the widget chapter. For now, let&#8217;s just dig into
@@ -1108,12 +1103,12 @@ getHomeR = defaultLayout $ do
     setTitle $ toHtml "Hi There!"
     [whamlet|&lt;h1&gt;Hello World!|]
     toWidget [lucius|h1 { color: red }|]
-    toWidget [julius|alert('Yay, Javascript works too!');|]
+    toWidget [julius|alert('Yay, JavaScript works too!');|]
 
 main :: IO ()
 main = warp 3000 $ liteApp $ dispatchTo getHomeR</programlisting>
 <simpara>This is the same example as above, but we&#8217;ve now condensed it into a single
-handler. Yesod will automatically handle providing the CSS and Javascript to
+handler. Yesod will automatically handle providing the CSS and JavaScript to
 the HTML. By default, it will place them in <literal>style</literal> and <literal>script</literal> tags in the
 <literal>head</literal> and <literal>body</literal> of the page, respectively, but Yesod provides many
 customization settings to do other things (such as automatically creating

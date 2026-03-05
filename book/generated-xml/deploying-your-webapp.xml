@@ -131,7 +131,7 @@ out a safe storage solution for the client session key.</simpara>
 <simpara>There are two commonly used features in the Yesod world: serving your site over
 HTTPS, and placing your static files on a separate domain name. While both of
 these are good practices, when combined they can lead to problems if you&#8217;re not
-careful. In particular, most web browsers will not load up Javascript files
+careful. In particular, most web browsers will not load up JavaScript files
 from a non-HTTPS domain name if your HTML is served from an HTTPS domain name.
 In this situation, you&#8217;ll need to do one of two things:</simpara>
 <itemizedlist>
@@ -312,18 +312,12 @@ nginx, either for reverse proxying or FastCGI, this is not the case: you are
 responsible to run your own process. I strongly recommend a monitoring utility
 which will automatically restart your application in case it crashes. There are
 many great options out there, such as angel or daemontools.</simpara>
-<simpara>To give a concrete example, here is an Upstart config file. The file must be
-placed in <literal>/etc/init/mysite.conf</literal>:</simpara>
-<screen>description "My awesome Yesod application"
-start on runlevel [2345];
-stop on runlevel [!2345];
-respawn
-chdir /home/michael/sites/mysite
-exec /home/michael/sites/mysite/dist/build/mysite/mysite</screen>
-<simpara>Once this is in place, bringing up your application is as simple as
-<literal>sudo start mysite</literal>. A similar systemd configuration file placed in
+<simpara>To give a concrete example, here is a systemd configuration file placed in
 <literal>/etc/systemd/system/yesod-sample.service</literal>:</simpara>
-<screen>[Service]
+<screen>[Unit]
+Description=My awesome Yesod application
+
+[Service]
 ExecStart=/home/sibi/.local/bin/my-yesod-executable
 Restart=always
 StandardOutput=syslog
@@ -397,7 +391,7 @@ executable as well, see the yesod-static docs for more details.</simpara></note>
 wai-handler-launch, which launches a Warp server and then opens up the user&#8217;s
 default web browser. There&#8217;s a little trickery involved here: in order to know
 that the user is still using the site, <literal>wai-handler-launch</literal>  inserts a "ping"
-Javascript snippet to every HTML page it serves. It <literal>wai-handler-launch</literal>
+JavaScript snippet to every HTML page it serves. It <literal>wai-handler-launch</literal>
 doesn&#8217;t receive a ping for two minutes, it shuts down.</simpara>
 </section>
 <section id="deploying-your-webapp_cgi_on_apache">
@@ -438,7 +432,7 @@ and the last line does the actual rewriting.</simpara>
 <section id="deploying-your-webapp_fastcgi_on_lighttpd">
 <title>FastCGI on lighttpd</title>
 <simpara>For this example, I&#8217;ve left off some of the basic FastCGI settings like
-mime-types. I also have a more complex file in production that prepends "www."
+MIME types. I also have a more complex file in production that prepends "www."
 when absent and serves static files from a separate domain. However, this
 should serve to show the basics.</simpara>
 <simpara>Here, "/home/michael/fastcgi" is the fastcgi application. The idea is to

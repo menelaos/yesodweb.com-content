@@ -27,7 +27,6 @@ module Chat.Data where
 
 import           Blaze.ByteString.Builder.Char.Utf8  (fromText)
 import           Control.Concurrent.Chan
-import           Data.Monoid                         ((&lt;&gt;))
 import           Data.Text                           (Text)
 import           Network.Wai.EventSource
 import           Network.Wai.EventSource.EventStream
@@ -179,11 +178,11 @@ is mostly identical for any subsite you&#8217;ll write.</simpara>
 <simpara>We now have a fully working subsite. The final component we want as part of our
 chat library is a widget to be embedded inside a page which will provide chat
 functionality. By creating this as a widget, we can include all of our HTML,
-CSS, and Javascript as a reusable component.</simpara>
+CSS, and JavaScript as a reusable component.</simpara>
 <simpara>Our widget will need to take in one argument: a function to convert a <literal>Chat</literal>
 subsite URL into a master site URL. The reasoning here is that an application
 developer could place the chat subsite anywhere in the URL structure, and this
-widget needs to be able to generate Javascript which will point at the correct
+widget needs to be able to generate JavaScript which will point at the correct
 URLs. Let&#8217;s start off our widget:</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">-- @Chat.hs
 chatWidget :: YesodChat master
@@ -203,7 +202,7 @@ function lives in the <literal>Handler</literal> monad, we need to use <literal>
 <programlisting language="haskell" linenumbering="unnumbered">-- @Chat.hs
     ili &lt;- handlerToWidget isLoggedIn  -- check if we're already logged in</programlisting>
 <simpara>If the user is logged in, we want to display the chat box, style it with some
-CSS, and then make it interactive using some Javascript. This is mostly
+CSS, and then make it interactive using some JavaScript. This is mostly
 client-side code wrapped in a Widget:</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">-- @Chat.hs
     if ili
@@ -229,7 +228,7 @@ client-side code wrapped in a Widget:</simpara>
                     overflow: auto;
                 }
             |]
-            -- And now that Javascript
+            -- And now that JavaScript
             toWidgetBody [julius|
                 // Set up the receiving end
                 var output = document.getElementById(#{toJSON output});

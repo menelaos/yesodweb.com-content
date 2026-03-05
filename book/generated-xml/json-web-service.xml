@@ -18,13 +18,12 @@ efficiently generates responses using blaze-builder. aeson uses attoparsec for
 parsing; by using attoparsec-conduit we get easy interoperability with WAI.
 This plays out as:</simpara>
 <programlisting language="haskell" linenumbering="unnumbered">{-# LANGUAGE OverloadedStrings #-}
+import           Conduit                  (runConduit, (.|))
 import           Control.Exception        (SomeException)
 import           Control.Exception.Lifted (handle)
 import           Control.Monad.IO.Class   (liftIO)
 import           Data.Aeson               (Value, encode, object, (.=))
 import           Data.Aeson.Parser        (json)
-import           Data.ByteString          (ByteString)
-import           Data.Conduit             (($$))
 import           Data.Conduit.Attoparsec  (sinkParser)
 import           Network.HTTP.Types       (status200, status400)
 import           Network.Wai              (Application, Response, responseLBS)
@@ -36,7 +35,7 @@ main = run 3000 app
 
 app :: Application
 app req sendResponse = handle (sendResponse . invalidJson) $ do
-    value &lt;- sourceRequestBody req $$ sinkParser json
+    value &lt;- runConduit $ sourceRequestBody req .| sinkParser json
     newValue &lt;- liftIO $ modValue value
     sendResponse $ responseLBS
         status200

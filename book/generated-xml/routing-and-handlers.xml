@@ -325,7 +325,7 @@ should remember that the function can be used in your <literal>Handler</literal>
 <simpara>There&#8217;s nothing too surprising about this type. This function returns some HTML
 content, represented by the <literal>Html</literal> data type. But clearly Yesod would not be
 useful if it only allowed HTML responses to be generated. We want to respond with
-CSS, Javascript, JSON, images, and more. So the question is: what data types
+CSS, JavaScript, JSON, images, and more. So the question is: what data types
 can be returned?</simpara>
 <simpara>In order to generate a response, we need to know two pieces of information:
 the content type (e.g., <literal>text/html</literal>, <literal>image/png</literal>) and how to serialize it to a
@@ -615,9 +615,9 @@ neverExpires
 </term>
 <listitem>
 <simpara>
-Set the Expires header to the year 2037. You can use this with
-content which should never expire, such as when the request path has a hash
-value associated with it.
+Set the Expires header to a date one year from now. You can use
+this with content which should never expire, such as when the request path has a
+hash value associated with it.
 </simpara>
 </listitem>
 </varlistentry>

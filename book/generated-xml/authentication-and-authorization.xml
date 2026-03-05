@@ -89,7 +89,6 @@ Once you have the <literal>clientId</literal> and <literal>secretId</literal>, r
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Data.Default                (def)
 import           Data.Text                   (Text)
 import           Network.HTTP.Client.Conduit (Manager, newManager)
 import           Yesod
@@ -259,15 +258,21 @@ users (verify account, password retrieval, etc.).</simpara>
 passwords in a Persistent SQLite database.</simpara>
 <note><simpara>Even if you don&#8217;t have an email server, for debugging purposes the
 verification link is printed in the console.</simpara></note>
-<programlisting language="haskell" linenumbering="unnumbered">{-# LANGUAGE DeriveDataTypeable         #-}
+<programlisting language="haskell" linenumbering="unnumbered">{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 import           Control.Monad            (join)
 import           Control.Monad.Logger     (runNoLoggingT)
 import           Data.Maybe               (isJust)
@@ -278,13 +283,12 @@ import           Database.Persist.Sqlite
 import           Database.Persist.TH
 import           Network.Mail.Mime
 import           Text.Blaze.Html.Renderer.Utf8 (renderHtml)
-import           Text.Hamlet                   (shamlet)
 import           Text.Shakespeare.Text         (stext)
 import           Yesod
 import           Yesod.Auth
 import           Yesod.Auth.Email
 
-share [mkPersist sqlSettings { mpsGeneric = False }, mkMigrate "migrateAll"] [persistLowerCase|
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 User
     email Text
     password Text Maybe -- Password may not be set yet
@@ -390,7 +394,7 @@ instance YesodAuthEmail App where
         mu &lt;- get uid
         case mu of
             Nothing -&gt; return Nothing
-            Just u -&gt; do
+            Just _u -&gt; do
                 update uid [UserVerified =. True, UserVerkey =. Nothing]
                 return $ Just uid
     getPassword = liftHandler . runDB . fmap (join . fmap userPassword) . get
@@ -438,7 +442,6 @@ your Yesod typeclass instance. Let&#8217;s see an example.</simpara>
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-import           Data.Default         (def)
 import           Data.Text            (Text)
 import           Network.HTTP.Conduit (Manager, newManager, tlsManagerSettings)
 import           Yesod
@@ -465,6 +468,7 @@ instance Yesod App where
     -- anyone can access other pages
     isAuthorized _ _ = return Authorized
 
+isAdmin :: Handler AuthResult
 isAdmin = do
     mu &lt;- maybeAuthId
     return $ case mu of

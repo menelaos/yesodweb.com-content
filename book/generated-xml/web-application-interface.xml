@@ -155,7 +155,6 @@ of requests, and then hold that <literal>MVar</literal> while sending each respo
 import           Blaze.ByteString.Builder           (fromByteString)
 import           Blaze.ByteString.Builder.Char.Utf8 (fromShow)
 import           Control.Concurrent.MVar
-import           Data.Monoid                        ((&lt;&gt;))
 import           Network.HTTP.Types                 (status200)
 import           Network.Wai
 import           Network.Wai.Handler.Warp           (run)

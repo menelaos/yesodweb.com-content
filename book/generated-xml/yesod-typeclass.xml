@@ -165,7 +165,6 @@ let&#8217;s see how we could modify Yesod to always produce trailing slashes on 
 {-# LANGUAGE TypeFamilies          #-}
 import           Blaze.ByteString.Builder.Char.Utf8 (fromText)
 import           Control.Arrow                      ((***))
-import           Data.Monoid                        (mappend)
 import qualified Data.Text                          as T
 import qualified Data.Text.Encoding                 as TE
 import           Network.HTTP.Types                 (encodePath)
@@ -180,7 +179,7 @@ mkYesod "Slash" [parseRoutes|
 
 instance Yesod Slash where
     joinPath _ ar pieces' qs' =
-        fromText ar `mappend` encodePath pieces qs
+        fromText ar &lt;&gt; encodePath pieces qs
       where
         qs = map (TE.encodeUtf8 *** go) qs'
         go "" = Nothing
@@ -286,7 +285,7 @@ mkYesod "App" [parseRoutes|
 
 instance Yesod App where
     defaultLayout contents = do
-        PageContent title headTags bodyTags &lt;- widgetToPageContent contents
+        PageContent title _desc headTags bodyTags &lt;- widgetToPageContent contents
         mmsg &lt;- getMessage
         withUrlRenderer [hamlet|
             $doctype 5
@@ -381,7 +380,7 @@ require loading up the CSS/JS from scratch, even if nothing changed! What we
 really want is to store this content in an external file and then refer to it
 from the HTML.</simpara>
 <simpara>This is where <literal>addStaticContent</literal> comes in. It takes three arguments: the
-filename extension of the content (<literal>css</literal> or <literal>js</literal>), the mime-type of the content
+filename extension of the content (<literal>css</literal> or <literal>js</literal>), the MIME type of the content
 (<literal>text/css</literal> or <literal>text/javascript</literal>) and the content itself. It will then return
 one of three possible results:</simpara>
 <variablelist>
