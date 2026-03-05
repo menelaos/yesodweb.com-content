@@ -15,10 +15,22 @@ convenience. The one exception you’ll see below will be i18n messages.</p>
 <p>We’ll start off with our language extensions. In scaffolded code, the language
 extensions are specified in the cabal file, so you won’t need to put this in
 your individual Haskell files.</p>
-<pre language="haskell" linenumbering="unnumbered"><code class="haskell">{-# LANGUAGE OverloadedStrings, TypeFamilies, QuasiQuotes,
-             TemplateHaskell, GADTs, FlexibleContexts,
-             MultiParamTypeClasses, DeriveDataTypeable,
-             GeneralizedNewtypeDeriving, ViewPatterns #-}</code></pre>
+<pre language="haskell" linenumbering="unnumbered"><code class="haskell">{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}</code></pre>
 <p>Now our imports.</p>
 <pre language="haskell" linenumbering="unnumbered"><code class="haskell">import Yesod
 import Yesod.Auth
@@ -32,7 +44,6 @@ import Database.Persist.Sqlite
     , createSqlitePool, runSqlPersistMPool
     )
 import Data.Time (UTCTime, getCurrentTime)
-import Control.Applicative ((&lt;$&gt;), (&lt;*&gt;), pure)
 import Data.Typeable (Typeable)
 import Control.Monad.Logger (runStdoutLoggingT)</code></pre>
 <p>First we’ll set up our Persistent entities. We’re going to both create our data
@@ -171,7 +182,7 @@ is redirected to another page. In order to allow the POST page to give the user
 some kind of feedback, we have the <code>getMessage</code> and <code>setMessage</code> functions. It’s a
 good idea to always check for pending messages in your defaultLayout function.</p>
 <pre language="haskell" linenumbering="unnumbered"><code class="haskell">        mmsg &lt;- getMessage</code></pre>
-<p>We use widgets to compose together HTML, CSS and Javascript. At the end of the
+<p>We use widgets to compose together HTML, CSS and JavaScript. At the end of the
 day, we need to unwrap all of that into simple HTML. That’s what the
 <code>widgetToPageContent</code> function is for. We’re going to give it a widget consisting
 of the content we received from the individual page (inside), plus a standard

@@ -57,7 +57,7 @@ usable on its own as a standalone library. Most of this chapter will address
 Persistent on its own.</p>
 <section id="persistent_synopsis">
 <h1>Synopsis</h1>
-<p>The required dependencies for the below are: persistent, persistent-sqlite and persistent-template.</p>
+<p>The required dependencies for the below are: persistent and persistent-sqlite.</p>
 <pre language="haskell" linenumbering="unnumbered"><code class="haskell active">{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE DataKinds                  #-}
@@ -72,6 +72,7 @@ Persistent on its own.</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 import           Control.Monad.IO.Class  (liftIO)
 import           Database.Persist
 import           Database.Persist.Sqlite
@@ -176,11 +177,17 @@ can represent data that gets sent to and from a database. Its definition is:</p>
     | PersistNull
     | PersistList [PersistValue]
     | PersistMap [(Text, PersistValue)]
-    | PersistObjectId ByteString
-    -- ^ Intended especially for MongoDB backend
-    | PersistDbSpecific ByteString
-    -- ^ Using &#39;PersistDbSpecific&#39; allows you to use types
-    -- specific to a particular backend</code></pre>
+    | -- | Intended especially for MongoDB backend
+      PersistObjectId ByteString
+    | -- | Intended especially for PostgreSQL backend for text arrays
+      PersistArray [PersistValue]
+    | -- | This constructor is used to specify some raw literal value for the
+      -- backend. The &#39;LiteralType&#39; value specifies how the value should be
+      -- escaped. This can be used to make special, custom types avaialable
+      -- in the back end.
+      --
+      -- @since 2.12.0.0
+      PersistLiteral_ LiteralType ByteString</code></pre>
 <p>A <code>PersistValue</code> correlates to a column in a SQL database. In our person example
 above, name and age would be our <code>PersistValues</code>s.</p>
 <p>Each Persistent backend needs to know how to translate the relevant values into
@@ -236,11 +243,10 @@ entities once. Let’s see a quick example:</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-import Database.Persist
 import Database.Persist.TH
 import Database.Persist.Sqlite
-import Control.Monad.IO.Class (liftIO)
 
 mkPersist sqlSettings [persistLowerCase|
 Person
@@ -283,22 +289,22 @@ data Person = Person
 type PersonId = Key Person
 
 instance PersistEntity Person where
-    newtype Key Person = PersonKey (BackendKey SqlBackend)
+    newtype Key Person = PersonKey {unPersonKey :: (BackendKey SqlBackend)}
         deriving (PersistField, Show, Eq, Read, Ord)
     -- A Generalized Algebraic Datatype (GADT).
     -- This gives us a type-safe approach to matching fields with
     -- their datatypes.
-    data EntityField Person typ where
-        PersonId   :: EntityField Person PersonId
-        PersonName :: EntityField Person String
-        PersonAge  :: EntityField Person Int
+    data EntityField Person typ
+        = (typ ~ PersonId) =&gt; PersonId
+        | (typ ~ String) =&gt; PersonName
+        | (typ ~ Int) =&gt; PersonAge
 
     data Unique Person
     type PersistEntityBackend Person = SqlBackend
 
     toPersistFields (Person name age) =
-        [ SomePersistField name
-        , SomePersistField age
+        [ toPersistValue name
+        , toPersistValue age
         ]
 
     fromPersistValues [nameValue, ageValue] = Person
@@ -308,29 +314,32 @@ instance PersistEntity Person where
 
     -- Information on each field, used internally to generate SQL statements
     persistFieldDef PersonId = FieldDef
-        (HaskellName &quot;Id&quot;)
-        (DBName &quot;id&quot;)
+        (FieldNameHS &quot;Id&quot;)
+        (FieldNameDB &quot;id&quot;)
         (FTTypeCon Nothing &quot;PersonId&quot;)
         SqlInt64
         []
         True
         NoReference
+        ...
     persistFieldDef PersonName = FieldDef
-        (HaskellName &quot;name&quot;)
-        (DBName &quot;name&quot;)
+        (FieldNameHS &quot;name&quot;)
+        (FieldNameDB &quot;name&quot;)
         (FTTypeCon Nothing &quot;String&quot;)
         SqlString
         []
         True
         NoReference
+        ...
     persistFieldDef PersonAge = FieldDef
-        (HaskellName &quot;age&quot;)
-        (DBName &quot;age&quot;)
+        (FieldNameHS &quot;age&quot;)
+        (FieldNameDB &quot;age&quot;)
         (FTTypeCon Nothing &quot;Int&quot;)
         SqlInt64
         []
         True
-        NoReference</code></pre>
+        NoReference
+        ...</code></pre>
 <p>As you might expect, our <code>Person</code> datatype closely matches the definition we
 gave in the original Template Haskell version. We also have a Generalized
 Algebraic Datatype (GADT) which gives a separate constructor for each field.
@@ -354,12 +363,11 @@ pass it off to other Persistent functions.</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 
-import           Control.Monad.IO.Class  (liftIO)
 import           Database.Persist
 import           Database.Persist.Sqlite
 import           Database.Persist.TH
-import           Control.Monad.IO.Unlift
 import           Data.Text
 import           Control.Monad.Reader
 import           Control.Monad.Logger
@@ -466,15 +474,11 @@ to <em>ask</em> it to help. Let’s see what this looks like:</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 
-import           Control.Monad.IO.Class  (liftIO)
 import           Database.Persist
 import           Database.Persist.Sqlite
 import           Database.Persist.TH
-import           Control.Monad.IO.Unlift
-import           Data.Text
-import           Control.Monad.Reader
-import           Control.Monad.Logger
 import           Conduit
 
 share [mkPersist sqlSettings, mkEntityDefList &quot;entityDefs&quot;, mkMigrate &quot;migrateAll&quot;] [persistLowerCase|
@@ -515,7 +519,7 @@ Persistent provides a helper function, <code>mkMigrate</code>:</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-import Database.Persist
+{-# LANGUAGE TypeOperators              #-}
 import Database.Persist.Sqlite
 import Database.Persist.TH
 
@@ -623,10 +627,10 @@ in Haskell as a data constructor.</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
-import Data.Time
 import Control.Monad.IO.Class (liftIO)
 
 share [mkPersist sqlSettings, mkMigrate &quot;migrateAll&quot;] [persistLowerCase|
@@ -730,8 +734,8 @@ registered email address. For this, you need one of the select functions.</p>
 <tbody>
 <tr>
 <td align="left" valign="top"><p>selectSource</p></td>
-<td align="left" valign="top"><p>A <code>Source</code> containing all the IDs and values from the database. This allows you to write streaming code.</p>
-<p>NOTE: A <code>Source</code> is a stream of data, and is part of the <code>conduit</code> package. I
+<td align="left" valign="top"><p>A <code>ConduitT</code> containing all the IDs and values from the database. This allows you to write streaming code.</p>
+<p>NOTE: A <code>ConduitT</code> is a monad transformer designed for streaming data, and is part of the <code>conduit</code> package. I
 recommend reading the
 <a href="https://github.com/snoyberg/conduit">Official Conduit tutorial</a> to get started.</p></td>
 </tr>
@@ -746,7 +750,7 @@ recommend reading the
 </tr>
 <tr>
 <td align="left" valign="top"><p>selectKeys</p></td>
-<td align="left" valign="top"><p>Returns only the keys, without the values, as a <code>Source</code>.</p></td>
+<td align="left" valign="top"><p>Returns only the keys, without the values, as a <code>ConduitT</code>.</p></td>
 </tr>
 </tbody>
 </tgroup>
@@ -1000,6 +1004,7 @@ database, we want to just use the current date-time for that timestamp.</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
@@ -1042,7 +1047,7 @@ favorite programming language:</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-import Database.Persist
+{-# LANGUAGE TypeOperators              #-}
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Data.Time
@@ -1063,9 +1068,8 @@ main = runSqlite &quot;:memory:&quot; $ do
 itself; you still need to fill in all values. This will only affect the
 database schema and automatic migrations.</p></aside>
 <p>We need to surround the string with single quotes so that the database can
-properly interpret it. Finally, Persistent can use double quotes for containing
-white space, so if we want to set someone’s default home country to be El
-Salvador:</p>
+properly interpret it. This also allows us to use values containing white space,
+so if we want to set someone’s default home country to be El Salvador:</p>
 <pre language="haskell" linenumbering="unnumbered"><code class="haskell active">{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE DataKinds                  #-}
@@ -1080,7 +1084,7 @@ Salvador:</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-import Database.Persist
+{-# LANGUAGE TypeOperators              #-}
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Data.Time
@@ -1091,7 +1095,7 @@ Person
     age Int Maybe
     created UTCTime default=CURRENT_TIME
     language String default=&#39;Haskell&#39;
-    country String &quot;default=&#39;El Salvador&#39;&quot;
+    country String default=&#39;El Salvador&#39;
     deriving Show
 |]
 
@@ -1105,7 +1109,7 @@ existing databases.</p>
 Person sql=the-person-table id=numeric_id
     firstName String sql=first_name
     lastName String sql=fldLastName
-    age Int &quot;sql=The Age of the Person&quot;
+    age Int sql=&quot;The Age of the Person&quot;
     PersonName firstName lastName
     deriving Show
 |]</code></pre>
@@ -1132,11 +1136,11 @@ the related entity. So if a person has many cars:</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Control.Monad.IO.Class (liftIO)
-import Data.Time
 
 share [mkPersist sqlSettings, mkMigrate &quot;migrateAll&quot;] [persistLowerCase|
 Person
@@ -1176,10 +1180,10 @@ want to track which people have shopped in which stores:</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
-import Data.Time
 
 share [mkPersist sqlSettings, mkMigrate &quot;migrateAll&quot;] [persistLowerCase|
 Person
@@ -1312,6 +1316,7 @@ derivePersistField &quot;Employment&quot;</code></pre>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Employment
@@ -1366,12 +1371,11 @@ operators. But this is still a good example, so let’s roll with it.</p></aside
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+import Conduit
 import Database.Persist.TH
 import Data.Text (Text)
 import Database.Persist.Sqlite
-import Control.Monad.IO.Class (liftIO)
-import Data.Conduit
-import qualified Data.Conduit.List as CL
 
 share [mkPersist sqlSettings, mkMigrate &quot;migrateAll&quot;] [persistLowerCase|
 Person
@@ -1391,7 +1395,7 @@ main = runSqlite &quot;:memory:&quot; $ do
     -- Persistent does not provide the LIKE keyword, but we&#39;d like to get the
     -- whole Snoyman family...
     let sql = &quot;SELECT name FROM Person WHERE name LIKE &#39;%Snoyman&#39;&quot;
-    rawQuery sql [] $$ CL.mapM_ (liftIO . print)</code></pre>
+    runConduit $ rawQuery sql [] .| mapM_C (liftIO . print)</code></pre>
 <p>There is also higher-level support that allows for automated data marshaling.
 Please see the Haddock API docs for more details.</p>
 </section>
@@ -1418,6 +1422,7 @@ the database via the <code>runDB</code> method. Let’s see this in action.</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE ViewPatterns               #-}
 import Yesod
 import Database.Persist.Sqlite
@@ -1489,8 +1494,8 @@ main = runStderrLoggingT $ withSqlitePool &quot;test.db3&quot; openConnectionCou
 DB action from within a <code>Handler</code>. Within the <code>runDB</code>, you can use any of the
 functions we’ve spoken about so far, such as <code>insert</code> and <code>selectList</code>.</p>
 <aside class="note">
-<p>The type of <code>runDB</code> is <code>YesodDB site a → HandlerT site IO a</code>. <code>YesodDB</code> is defined as:</p>
-<pre language="haskell" linenumbering="unnumbered"><code class="haskell">type YesodDB site = ReaderT (YesodPersistBackend site) (HandlerT site IO)</code></pre>
+<p>The type of <code>runDB</code> is <code>YesodDB site a → HandlerFor site a</code>. <code>YesodDB</code> is defined as:</p>
+<pre language="haskell" linenumbering="unnumbered"><code class="haskell">type YesodDB site = ReaderT (YesodPersistBackend site) (HandlerFor site)</code></pre>
 <p>Since it is built on top of the <code>YesodPersistBackend</code> associated type, it uses
 the appropriate database backend based on the current site.</p>
 </aside>
@@ -1530,6 +1535,7 @@ Persistent knowledge should transfer over easily.</p>
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 import           Control.Monad.IO.Class  (liftIO)
 import           Control.Monad.Logger    (runStderrLoggingT)
 import           Database.Persist
@@ -1580,8 +1586,8 @@ to the underlying data store, so you can write whatever 5-way joins you want.</p
 <p>Persistent integrates directly into the general Yesod workflow. Not only do
 helper packages like <code>yesod-persistent</code> provide a nice layer, but packages like
 <code>yesod-form</code> and <code>yesod-auth</code> also leverage Persistent’s features as well.</p>
-<p>For more information on the syntax of entity declarations, database connection, etc.
-Checkout <a href="https://github.com/yesodweb/persistent/tree/master/docs">https://github.com/yesodweb/persistent/tree/master/docs</a></p>
+<p>For more information on the syntax of entity declarations, database connection,
+etc., check out <a href="https://github.com/yesodweb/persistent/tree/master/docs">https://github.com/yesodweb/persistent/tree/master/docs</a>.</p>
 </section>
 </article>
 </section>

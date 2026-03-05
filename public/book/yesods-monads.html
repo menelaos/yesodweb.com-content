@@ -9,7 +9,7 @@
 appeared: <code>Handler</code>, <code>Widget</code> and <code>YesodDB</code> (for Persistent). As with most
 monads, each one provides some specific functionality: <code>Handler</code> gives access
 to the request and allows you to send responses, a <code>Widget</code> contains HTML, CSS,
-and Javascript, and <code>YesodDB</code> lets you make database queries. In
+and JavaScript, and <code>YesodDB</code> lets you make database queries. In
 Model-View-Controller (MVC) terms, we could consider <code>YesodDB</code> to be the model,
 <code>Widget</code> to be the view, and <code>Handler</code> to be the controller.</p>
 <p>So far, we’ve presented some very straight-forward ways to use these monads:
@@ -72,25 +72,33 @@ of transformers you have around an <code>IO</code>, there’s still an <code>IO<
 meaning you can perform I/O in any of these monad transformer stacks. You’ll
 often see code that looks like <code>liftIO $ putStrLn &quot;Hello There!&quot;</code>.</p>
 </section>
-<section id="yesods-monads_the_three_transformers">
-<h1>The Three Transformers</h1>
+<section id="yesods-monads_the_three_monads">
+<h1>The Three Monads</h1>
 <aside class="note"><p>In earlier versions of Yesod, <code>Handler</code> and <code>Widget</code> were far more
 magical and scary. Since version 1.2, things are much simplified. So if you
 remember reading some scary stuff about fake transformers and subsite
 parameters, rest assured: you haven’t gone crazy, things have actually changed
 a bit. The story with persistent is likewise much simpler.</p></aside>
-<p>We’ve already discussed two of our transformers previously: <code>Handler</code> and
-<code>Widget</code>. Remember that these are each application-specific synonyms for the
-more generic <code>HandlerT</code> and <code>WidgetT</code>. Each of those transformers takes two
-type parameters: your foundation data type, and a base monad. The most commonly
-used base monad is <code>IO</code>.</p>
-<p>In persistent, we have a typeclass called <code>PersistStore</code>. This typeclass
-defines all of the primitive operations you can perform on a database, like
-<code>get</code>. There are instances of this typeclass for each database backend
-supported by persistent. For example, for SQL databases, there is a datatype
-called <code>SqlBackend</code>. We then use a standard <code>ReaderT</code> transformer to provide
-that <code>SqlBackend</code> value to all of our operations.  This means that you can run
-a SQL database with any underlying monad which is an instance of <code>MonadIO</code>. The
+<p>Prior to Yesod 1.6, <code>Handler</code> and <code>Widget</code> were implemented via monad
+transformers. Nowadays, we use the
+<a href="https://academy.fpblock.com/blog/2017/06/readert-design-pattern">ReaderT
+pattern</a>. <code>Handler</code> and <code>Widget</code> are application-specific synonyms for the more
+generic <code>HandlerFor</code> and <code>WidgetFor</code>.</p>
+<pre language="haskell" linenumbering="unnumbered"><code class="haskell">newtype HandlerFor site a = HandlerFor
+    { unHandlerFor :: HandlerData site site -&gt; IO a
+    }
+
+newtype WidgetFor site a = WidgetFor
+    { unWidgetFor :: WidgetData site -&gt; IO a
+    }</code></pre>
+<p><code>site</code> is your foundation data type.</p>
+<p>In persistent, we have a few typeclasses that define all of the primitive
+operations you can perform on a database, like <code>get</code> in <code>PersistStoreRead</code>.
+There are instances of these typeclasses for each database backend supported by
+persistent. For example, for SQL databases, there is a datatype called
+<code>SqlBackend</code>. We then use a standard <code>ReaderT</code> transformer to provide that
+<code>SqlBackend</code> value to all of our operations.  This means that you can run a SQL
+database with any underlying monad which is an instance of <code>MonadIO</code>. The
 takeaway here is that we can layer our Persistent transformer on top of
 <code>Handler</code> or <code>Widget</code>.</p>
 <p>In order to make it simpler to refer to the relevant Persistent transformer,
@@ -98,7 +106,7 @@ the yesod-persistent package defines the <code>YesodPersistBackend</code> associ
 For example, if I have a site called <code>MyApp</code> and it uses SQL, I would define
 something like <code>type instance YesodPersistBackend MyApp = SqlBackend</code>. And for
 more convenience, we have a type synonym called <code>YesodDB</code> which is defined as:</p>
-<pre language="haskell" linenumbering="unnumbered"><code class="haskell">type YesodDB site = ReaderT (YesodPersistBackend site) (HandlerT site IO)</code></pre>
+<pre language="haskell" linenumbering="unnumbered"><code class="haskell">type YesodDB site = ReaderT (YesodPersistBackend site) (HandlerFor site)</code></pre>
 <p>Our database actions will then have types that look like <code>YesodDB MyApp
 SomeResult</code>. In order to run these, we can use the standard Persistent unwrap
 functions (like <code>runSqlPool</code>) to run the action and get back a normal
@@ -106,7 +114,7 @@ functions (like <code>runSqlPool</code>) to run the action and get back a normal
 together, we can now run database actions inside our handlers.</p>
 <p>Most of the time in Yesod code, and especially thus far in this book, widgets
 have been treated as actionless containers that simply combine together HTML,
-CSS and Javascript. But in reality, a <code>Widget</code> can do anything that a <code>Handler</code>
+CSS and JavaScript. But in reality, a <code>Widget</code> can do anything that a <code>Handler</code>
 can do, by using the <code>handlerToWidget</code> function. So for example, you can run
 database queries inside a <code>Widget</code> by using something like <code>handlerToWidget .
 runDB</code>.</p>
@@ -119,14 +127,20 @@ our approach would have been to load up the data in a <code>Handler</code>, and 
 that data into a <code>Widget</code>. Now, we’ll do the loading of data in the <code>Widget</code>
 itself. This is a boon for modularity, as this <code>Widget</code> can be used in any
 <code>Handler</code> we want, without any need to pass in the database contents.</p>
-<pre language="haskell" linenumbering="unnumbered"><code class="haskell active">{-# LANGUAGE FlexibleContexts           #-}
+<pre language="haskell" linenumbering="unnumbered"><code class="haskell active">{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 import           Control.Monad.Logger    (runNoLoggingT)
 import           Data.Text               (Text)
 import           Data.Time
@@ -283,75 +297,6 @@ many common monad transformers.</p>
 <p>But if you want to, you can wrap up the call to <code>runInputGet</code> above using
 <code>handlerToWidget</code>, and everything will work the same.</p>
 </section>
-<section id="yesods-monads_performance_and_error_messages">
-<h1>Performance and error messages</h1>
-<aside class="note"><p>You can consider this section extra credit. It gets into some of the
-design motivation behind Yesod, which isn’t necessary for usage of Yesod.</p></aside>
-<p>At this point, you may be just a bit confused. As I mentioned above, the
-<code>Widget</code> synonym uses <code>IO</code> as its base monad, not <code>Handler</code>. So how can
-<code>Widget</code> perform <code>Handler</code> actions? And why <em role="strong">not</em> just make <code>Widget</code> a
-transformer on top of <code>Handler</code>, and then use <code>lift</code> instead of this special
-<code>handlerToWidget</code>? And finally, I mentioned that <code>Widget</code> and <code>Handler</code> were
-both instances of <code>MonadResource</code>. If you’re familiar with <code>MonadResource</code>, you
-may be wondering why <code>ResourceT</code> doesn’t appear in the monad transformer stack.</p>
-<p>The fact of the matter is, there’s a much simpler (in terms of implementation)
-approach we could take for all of these monad transformers. <code>Handler</code> could be
-a transformer on top of <code>ResourceT IO</code> instead of just <code>IO</code>, which would be a
-bit more accurate. And <code>Widget</code> could be layered on top of <code>Handler</code>. The end
-result would look something like this:</p>
-<pre language="haskell" linenumbering="unnumbered"><code class="haskell">type Handler = HandlerT App (ResourceT IO)
-type Widget  = WidgetT  App (HandlerT App (ResourceT IO))</code></pre>
-<p>Doesn’t look too bad, especially since you mostly deal with the more friendly
-type synonyms instead of directly with the transformer types. The problem is
-that any time those underlying transformers leak out, these larger type
-signatures can be incredibly confusing. And the most common time for them to
-leak out is in error messages, when you’re probably already pretty confused!
-(Another time is when working on subsites, which happens to be confusing too.)</p>
-<p>One other concern is that each monad transformer layer does add some amount of
-a performance penalty. This will probably be negligible compared to the I/O
-you’ll be performing, but the overhead is there.</p>
-<p>So instead of having properly layered transformers, we flatten out each of
-<code>HandlerT</code> and <code>WidgetT</code> into a one-level transformer. Here’s a high-level
-overview of the approach we use:</p>
-<ul>
-<li>
-<p>
-<code>HandlerT</code> is really just a <code>ReaderT</code> monad. (We give it a different name to
-  make error messages clearer.) This is a reader for the <code>HandlerData</code> type,
-  which contains request information and some other immutable contents.
-</p>
-</li>
-<li>
-<p>
-In addition, <code>HandlerData</code> holds an <code>IORef</code> to a <code>GHState</code> (badly named for
-  historical reasons), which holds some data which can be mutated during the
-  course of a handler (e.g., session variables). The reason we use an <code>IORef</code>
-  instead of a <code>StateT</code> kind of approach is that <code>IORef</code> will maintain the
-  mutated state even if a runtime exception is thrown.
-</p>
-</li>
-<li>
-<p>
-The <code>ResourceT</code> monad transformer is essentially a <code>ReaderT</code> holding onto an
-  <code>IORef</code>. This <code>IORef</code> contains the information on all cleanup actions that
-  must be performed. (This is called <code>InternalState</code>.) Instead of having a
-  separate transformer layer to hold onto that reference, we hold onto the
-  reference ourself in <code>HandlerData</code>. (And yes, the reson for an <code>IORef</code> here
-  is also for runtime exceptions.)
-</p>
-</li>
-<li>
-<p>
-A <code>WidgetT</code> is essentially just a <code>WriterT</code> on top of everything that a
-  <code>HandlerT</code> does. But since <code>HandlerT</code> is just a <code>ReaderT</code>, we can easily
-  compress the two aspects into a single transformer, which looks something
-  like <code>newtype WidgetT site m a = WidgetT (HandlerData → m (a, WidgetData))</code>.
-</p>
-</li>
-</ul>
-<p>If you want to understand this more, please have a look at the definitions of
-<code>HandlerT</code> and <code>WidgetT</code> in <code>Yesod.Core.Types</code>.</p>
-</section>
 <section id="yesods-monads_adding_a_new_monad_transformer">
 <h1>Adding a new monad transformer</h1>
 <p>At times, you’ll want to add your own monad transformer in part of your
@@ -372,7 +317,7 @@ getHomeR = do
             &lt;p&gt;Here&#39;s some random data: #{decodeUtf8 $ encode randomBS}
         |]</code></pre>
 <p>However, this results in an error message along the lines of:</p>
-<pre language="errormsg" linenumbering="unnumbered"><code>    No instance for (MonadCRandom e0 (HandlerT App IO))
+<pre language="errormsg" linenumbering="unnumbered"><code>    No instance for &#39;MonadCRandom e0 (HandlerFor App)&#39;
       arising from a use of ‘getBytes’
     In a stmt of a &#39;do&#39; block: randomBS &lt;- getBytes 128</code></pre>
 <p>How do we get such an instance? One approach is to simply use the <code>CRandT</code> monad transformer when we call <code>getBytes</code>. A complete example of doing so would be:</p>
@@ -381,7 +326,7 @@ getHomeR = do
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 import Yesod
-import Crypto.Random (SystemRandom, newGenIO)
+import Crypto.Random (SystemRandom)
 import Control.Monad.CryptoRandom
 import Data.ByteString.Base16 (encode)
 import Data.Text.Encoding (decodeUtf8)
@@ -409,11 +354,9 @@ getHomeR = do
 
 main :: IO ()
 main = warp 3000 App</code></pre>
-<p>Note that what we’re doing is layering the <code>CRandT</code> transformer on <em role="strong">top</em> of the
-<code>HandlerT</code> transformer. It does not work to do things the other way around:
-Yesod itself would ultimately have to unwrap the <code>CRandT</code> transformer, and it
-has no knowledge of how to do so. Notice that this is the same approach we take
-with Persistent: its transformer goes on top of <code>HandlerT</code>.</p>
+<p>Note that what we’re doing is layering the <code>CRandT</code> transformer on top of the
+<code>HandlerFor</code> monad. This is the same approach we take with Persistent: its
+transformer also goes on top of <code>HandlerFor</code>.</p>
 <p>But there are two downsides to this approach:</p>
 <ol numeration="arabic">
 <li>
@@ -444,7 +387,7 @@ import           Control.Monad              (join)
 import           Control.Monad.Catch        (throwM)
 import           Control.Monad.CryptoRandom
 import           Control.Monad.Error.Class  (MonadError (..))
-import           Crypto.Random              (SystemRandom, newGenIO)
+import           Crypto.Random              (SystemRandom)
 import           Data.ByteString.Base16     (encode)
 import           Data.IORef
 import           Data.Text.Encoding         (decodeUtf8)
@@ -526,7 +469,7 @@ However, we <em role="strong">have</em> gained some complexity in needing a <cod
 </li>
 </ol>
 <p>Hopefully, this helps get across an important point: the power of the
-<code>HandlerT</code> transformer. By just providing you with a readable environment,
+<code>ReaderT</code> pattern. By just providing you with a readable environment,
 you’re able to recreate a <code>StateT</code> transformer by relying on mutable
 references. In fact, if you rely on the underlying <code>IO</code> monad for runtime
 exceptions, you can implement most cases of <code>ReaderT</code>, <code>WriterT</code>, <code>StateT</code>, and

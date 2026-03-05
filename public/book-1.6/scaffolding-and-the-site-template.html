@@ -206,8 +206,7 @@ implementations of <code>Yesod</code> typeclass methods.</p>
 <ul>
 <li>
 <p>
-I want to define some helper functions (maybe the <code>&lt;&gt; = mappend</code>
-  operator) to be used by all handlers.
+I want to define some helper functions to be used by all handlers.
 </p>
 </li>
 <li>
@@ -281,7 +280,7 @@ Put a module statement at the top, and an <code>import Import</code> line below 
 </section>
 <section id="scaffolding-and-the-site-template_widgetfile">
 <h1>widgetFile</h1>
-<p>It’s very common to want to include CSS and Javascript specific to a page. You
+<p>It’s very common to want to include CSS and JavaScript specific to a page. You
 don’t want to have to remember to include those Lucius and Julius files
 manually every time you refer to a Hamlet file. For this, the site template
 provides the <code>widgetFile</code> function.</p>
@@ -376,7 +375,7 @@ serve from a different domain name. This has the advantage of not requiring
 transmission of cookies for static file requests, and also lets you offload
 static file hosting to a CDN or a service like Amazon S3. See the comments in
 the file for more details.</p>
-<p>Another optimization is that CSS and Javascript included in your widgets will
+<p>Another optimization is that CSS and JavaScript included in your widgets will
 not be included inside your HTML. Instead, their contents will be written to an
 external file, and a link given. This file will be named based on a hash of the
 contents as well, meaning:</p>
@@ -388,11 +387,11 @@ Caching works properly.
 </li>
 <li>
 <p>
-Yesod can avoid an expensive disk write of the CSS/Javascript file contents if a file with the same hash already exists.
+Yesod can avoid an expensive disk write of the CSS/JavaScript file contents if a file with the same hash already exists.
 </p>
 </li>
 </ol>
-<p>Finally, all of your Javascript is automatically minified via hjsmin.</p>
+<p>Finally, all of your JavaScript is automatically minified via hjsmin.</p>
 </section>
 <section id="scaffolding-and-the-site-template_environment_variables">
 <h1>Environment variables</h1>

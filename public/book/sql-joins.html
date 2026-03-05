@@ -26,17 +26,22 @@ Blog
     content Html</code></pre>
 <p>Let’s set up our initial Yesod application to show a blog post index indicating
 the blog title and the author:</p>
-<pre language="haskell" linenumbering="unnumbered"><code class="haskell active">{-# LANGUAGE EmptyDataDecls             #-}
+<pre language="haskell" linenumbering="unnumbered"><code class="haskell active">{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE EmptyDataDecls             #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE ViewPatterns               #-}
-import           Control.Monad.Logger
 import           Data.Text               (Text)
 import           Database.Persist.Sqlite
 import           Yesod
@@ -314,7 +319,7 @@ getHomeR = do
     render &lt;- getUrlRenderParams
     respondSourceDB typeHtml $ do
         sendChunkText &quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Blog posts&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;ul&gt;&quot;
-        blogsSrc $= CL.map (\(E.Value blogid, E.Value title, E.Value name) -&gt;
+        blogsSrc .| mapC (\(E.Value blogid, E.Value title, E.Value name) -&gt;
             toFlushBuilder $
             [hamlet|
                 &lt;li&gt;
@@ -323,7 +328,7 @@ getHomeR = do
             )
         sendChunkText &quot;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;&quot;</code></pre>
 <p>Notice the usage of <code>sendChunkText</code>, which sends some raw <code>Text</code> values over
-the network. We then take each of our blog tuples and use conduit’s <code>map</code>
+the network. We then take each of our blog tuples and use conduit’s <code>mapC</code>
 function to create a streaming value. We use <code>hamlet</code> to get templating, and
 then pass in our <code>render</code> function to convert the type-safe URLs into their
 textual versions. Finally, <code>toFlushBuilder</code> converts our <code>Html</code> value into a
@@ -362,24 +367,28 @@ And if you need it, you can even generate a streaming response from Esqueleto.
 </li>
 </ul>
 <p>For completeness, here’s the entire body of the final, streaming example:</p>
-<pre language="haskell" linenumbering="unnumbered"><code class="haskell active">{-# LANGUAGE EmptyDataDecls             #-}
+<pre language="haskell" linenumbering="unnumbered"><code class="haskell active">{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE EmptyDataDecls             #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE ViewPatterns               #-}
-import           Control.Monad.Logger
+import           Conduit
 import           Data.Text               (Text)
 import qualified Database.Esqueleto      as E
 import           Database.Esqueleto      ((^.))
 import           Database.Persist.Sqlite
 import           Yesod
-import qualified Data.Conduit.List as CL
-import Data.Conduit (($=))
 
 share [mkPersist sqlSettings, mkMigrate &quot;migrateAll&quot;] [persistLowerCase|
 Author
@@ -422,7 +431,7 @@ getHomeR = do
     render &lt;- getUrlRenderParams
     respondSourceDB typeHtml $ do
         sendChunkText &quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Blog posts&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;ul&gt;&quot;
-        blogsSrc $= CL.map (\(E.Value blogid, E.Value title, E.Value name) -&gt;
+        blogsSrc .| mapC (\(E.Value blogid, E.Value title, E.Value name) -&gt;
             toFlushBuilder $
             [hamlet|
                 &lt;li&gt;

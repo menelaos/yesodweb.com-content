@@ -72,7 +72,7 @@ have:</p>
 <aside class="note"><p>Yesod uses <code>ResourceT</code> for exception safety, instead of continuation
 passing style. This makes it much easier to write exception safe code in Yesod.</p></aside>
 <p>But as a Yesod user, you never really see <code>YesodApp</code>. There’s another layer
-on top of that which you are used to dealing with: <code>HandlerT</code>. When you write
+on top of that which you are used to dealing with: <code>HandlerFor</code>. When you write
 handler functions, you need to have access to three different things:</p>
 <ul>
 <li>
@@ -93,7 +93,7 @@ A mutable variable to keep track of updateable information, such as the headers 
 </ul>
 <p>So when you’re writing a handler function, you’re essentially just
 writing in a <code>ReaderT</code> transformer that has access to all of this information. The
-<code>runHandler</code> function will turn a <code>HandlerT</code> into a <code>YesodApp</code>. <code>yesodRunner</code> takes this
+<code>runHandler</code> function will turn a <code>HandlerFor</code> into a <code>YesodApp</code>. <code>yesodRunner</code> takes this
 a step further and converts all the way to a WAI <code>Application</code>.</p>
 </section>
 <section id="understanding-request_content">
@@ -102,8 +102,8 @@ a step further and converts all the way to a WAI <code>Application</code>.</p>
 with a type of <code>Handler Html</code>. We’ve just described what the <code>Handler</code> means,
 but how does Yesod know how to deal with <code>Html</code>? The answer lies in the
 <code>ToTypedContent</code> typeclass. The relevants bit of code are:</p>
-<pre language="haskell" linenumbering="unnumbered"><code class="haskell">data Content = ContentBuilder !BBuilder.Builder !(Maybe Int) -- ^ The content and optional content length.
-             | ContentSource !(Source (ResourceT IO) (Flush BBuilder.Builder))
+<pre language="haskell" linenumbering="unnumbered"><code class="haskell">data Content = ContentBuilder !BB.Builder !(Maybe Int) -- ^ The content and optional content length.
+             | ContentSource !(ConduitT () (Flush BB.Builder) (ResourceT IO) ())
              | ContentFile !FilePath !(Maybe FilePart)
              | ContentDontEvaluate !Content
 data TypedContent = TypedContent !ContentType !Content
@@ -299,7 +299,7 @@ just the Template Haskell portion:</p>
 <p>While this generates a few pieces of code, we only need to replicate three
 components to make our site work. Let’s start with the simplest: the
 <code>Handler</code> type synonym:</p>
-<pre language="haskell" linenumbering="unnumbered"><code class="haskell">type Handler = HandlerT App IO</code></pre>
+<pre language="haskell" linenumbering="unnumbered"><code class="haskell">type Handler = HandlerFor App</code></pre>
 <p>Next is the type-safe URL and its rendering function. The rendering function is
 allowed to generate both path segments and query string parameters. Standard
 Yesod sites never generate query-string parameters, but it is technically
@@ -350,7 +350,7 @@ Otherwise, we want to return a 405 bad method response, and therefore use the
 <code>badMethod</code> handler. At this point, we’ve come full circle to our original
 handler discussion. You can see that we’re using <code>yesodRunner</code> to execute
 our handler function. As a reminder, this will take our environment and WAI
-<code>Request</code>, convert it to a <code>YesodRequest</code>, constructor a <code>RunHandlerEnv</code>, hand that
+<code>Request</code>, convert it to a <code>YesodRequest</code>, construct a <code>RunHandlerEnv</code>, hand that
 to the handler function, and then convert the resulting <code>YesodResponse</code> into a
 WAI <code>Response</code>.</p>
 <p>Wonderful; one down, three to go. The next one is even easier.</p>
@@ -469,7 +469,7 @@ instance RenderRoute App where
         let (ps, qs) = renderRoute subRoute
          in (&quot;my-subsite&quot; : ps, qs)
 
-type Handler = HandlerT App IO
+type Handler = HandlerFor App
 
 instance Yesod App
 

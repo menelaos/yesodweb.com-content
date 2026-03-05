@@ -130,7 +130,7 @@ out a safe storage solution for the client session key.</p>
 <p>There are two commonly used features in the Yesod world: serving your site over
 HTTPS, and placing your static files on a separate domain name. While both of
 these are good practices, when combined they can lead to problems if you’re not
-careful. In particular, most web browsers will not load up Javascript files
+careful. In particular, most web browsers will not load up JavaScript files
 from a non-HTTPS domain name if your HTML is served from an HTTPS domain name.
 In this situation, you’ll need to do one of two things:</p>
 <ul>
@@ -311,18 +311,12 @@ nginx, either for reverse proxying or FastCGI, this is not the case: you are
 responsible to run your own process. I strongly recommend a monitoring utility
 which will automatically restart your application in case it crashes. There are
 many great options out there, such as angel or daemontools.</p>
-<p>To give a concrete example, here is an Upstart config file. The file must be
-placed in <code>/etc/init/mysite.conf</code>:</p>
-<pre>description &quot;My awesome Yesod application&quot;
-start on runlevel [2345];
-stop on runlevel [!2345];
-respawn
-chdir /home/michael/sites/mysite
-exec /home/michael/sites/mysite/dist/build/mysite/mysite</pre>
-<p>Once this is in place, bringing up your application is as simple as
-<code>sudo start mysite</code>. A similar systemd configuration file placed in
+<p>To give a concrete example, here is a systemd configuration file placed in
 <code>/etc/systemd/system/yesod-sample.service</code>:</p>
-<pre>[Service]
+<pre>[Unit]
+Description=My awesome Yesod application
+
+[Service]
 ExecStart=/home/sibi/.local/bin/my-yesod-executable
 Restart=always
 StandardOutput=syslog
@@ -396,7 +390,7 @@ executable as well, see the yesod-static docs for more details.</p></aside>
 wai-handler-launch, which launches a Warp server and then opens up the user’s
 default web browser. There’s a little trickery involved here: in order to know
 that the user is still using the site, <code>wai-handler-launch</code>  inserts a &quot;ping&quot;
-Javascript snippet to every HTML page it serves. It <code>wai-handler-launch</code>
+JavaScript snippet to every HTML page it serves. It <code>wai-handler-launch</code>
 doesn’t receive a ping for two minutes, it shuts down.</p>
 </section>
 <section id="deploying-your-webapp_cgi_on_apache">
@@ -437,7 +431,7 @@ and the last line does the actual rewriting.</p>
 <section id="deploying-your-webapp_fastcgi_on_lighttpd">
 <h1>FastCGI on lighttpd</h1>
 <p>For this example, I’ve left off some of the basic FastCGI settings like
-mime-types. I also have a more complex file in production that prepends &quot;www.&quot;
+MIME types. I also have a more complex file in production that prepends &quot;www.&quot;
 when absent and serves static files from a separate domain. However, this
 should serve to show the basics.</p>
 <p>Here, &quot;/home/michael/fastcgi&quot; is the fastcgi application. The idea is to
